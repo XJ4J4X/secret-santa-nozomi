@@ -80,6 +80,14 @@
   #joy{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(20,28,43,.35);transform:translate(-50%,-50%)}
   #joyKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(249,158,26,.85)}
   #jumpBtn{position:absolute;right:26px;bottom:34px;width:84px;height:84px;border-radius:50%;border:0;background:rgba(249,158,26,.85);color:#141c2b;font-family:'Teko';font-size:24px;letter-spacing:.05em;pointer-events:auto;touch-action:none}
+  #mpBoard{position:absolute;right:18px;top:62px;min-width:220px;background:var(--panel);padding:8px 12px;font-size:15px}
+  #mpBoard .h{font-family:'Teko';font-size:18px;letter-spacing:.14em;color:var(--or);text-transform:uppercase;margin-bottom:4px}
+  #mpBoard .r{display:flex;justify-content:space-between;gap:12px;padding:2px 0;border-top:1px solid rgba(255,255,255,.07)}
+  #mpBoard .r.me{color:var(--or)}
+  #mpBoard .r i{display:inline-block;width:9px;height:9px;margin-right:6px;transform:skewX(-14deg)}
+  #mpBoard .r span:last-child{font-family:'Teko';font-size:19px;color:#dbe4f0}
+  .chip.on b{color:var(--good)} .chip.wait b{color:var(--or)} .chip.off b{color:var(--muted)}
+  #emoteBtn{position:absolute;right:122px;bottom:44px;width:62px;height:62px;border-radius:50%;border:0;background:rgba(63,169,255,.85);font-size:28px;pointer-events:auto;touch-action:none}
   .flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:8;transition:opacity .5s}
   .flash.on{opacity:1}
   .banner{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;pointer-events:none;z-index:7;font-family:'Teko';font-weight:700;font-style:italic;text-transform:uppercase;
@@ -106,12 +114,15 @@
     <div class="chip"><span>⏱ <b id="hudTime">0:00</b></span></div>
     <div class="chip"><span id="hudColLbl">📜 Ofuda</span> <span><b id="hudCol">0/8</b></span></div>
     <div class="chip"><span>✔ <b id="hudScore">0</b></span></div>
+    <div class="chip off" id="mpChip"><span>👥 <b id="mpStatus">Solo</b></span></div>
   </div>
+  <div id="mpBoard" class="hidden"></div>
   <div id="capRing" class="hidden"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="50"/><circle class="fg" id="capArc" cx="60" cy="60" r="50"/></svg>Capture…</div>
   <div id="toast"></div>
-  <div id="help"><b>ZQSD / WASD</b> ou <b>flèches</b> : bouger · <b>Espace</b> : sauter · <b>Clic + souris</b> : caméra</div>
+  <div id="help"><b>ZQSD / WASD</b> ou <b>flèches</b> : bouger · <b>Espace</b> : sauter · <b>Clic + souris</b> : caméra · <b>E</b> : saluer · <b>R</b> : danser</div>
   <div id="joy" class="hidden"><i id="joyKnob"></i></div>
   <button id="jumpBtn" class="hidden">Saut</button>
+  <button id="emoteBtn" class="hidden">👋</button>
 </div>
 
 <div class="ui">
@@ -139,6 +150,7 @@
       <span class="key">ZQSD / WASD</span><span>Se déplacer (ou les flèches)</span>
       <span class="key">ESPACE</span><span>Sauter (on saute beaucoup plus haut sur Mars !)</span>
       <span class="key">CLIC + SOURIS</span><span>Tourner la caméra</span>
+      <span class="key">E / R</span><span>Saluer / danser devant les autres joueurs</span>
     </div>
     <div class="controls hidden" id="ctrlTouch">
       <span class="key">GAUCHE</span><span>Joystick pour se déplacer</span>
@@ -146,6 +158,7 @@
       <span class="key">SAUT</span><span>Bouton en bas à droite</span>
     </div>
     <p class="lead" style="margin-top:10px">Reste sur un <b>point hexagonal</b> pour le capturer. La flèche orange au-dessus de ta tête montre le prochain objectif. Bonus : ramasse les <b>ofuda</b> à Kanezaka et les <b>éclats d'étoile</b> sur Mars.</p>
+    <p class="lead" style="margin-top:0">🌐 <b>Multijoueur :</b> tous ceux qui ouvrent le lien jouent dans le même monde. Tu vois les autres joueurs et leurs scores en direct.</p>
     <div class="actions">
       <button class="btn ghost" id="backBtn"><span>Changer de joueur</span></button>
       <button class="btn" id="startBtn"><span>Jouer</span></button>
@@ -175,6 +188,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 /* =========================================================
@@ -424,7 +438,7 @@ if(THREE.GLTFLoader){
   new THREE.GLTFLoader().load(ROBOT_URL,gltf=>{
     const m=gltf.scene;
     const box=new THREE.Box3().setFromObject(m),h=box.max.y-box.min.y||1;
-    m.scale.setScalar(2.2/h);
+    m.scale.setScalar(2.2/h);R.gltf=gltf;R.scale=2.2/h;
     m.traverse(o=>{if(o.isMesh&&o.material){o.material.metalness=Math.min(o.material.metalness||0,.3)}});
     PG.children.forEach(c=>c.visible=false);
     PG.add(m);R.model=m;
@@ -432,6 +446,7 @@ if(THREE.GLTFLoader){
     gltf.animations.forEach(a=>{R.actions[a.name]=R.mixer.clipAction(a)});
     R.mixer.addEventListener("finished",()=>{R.oneShot=false});
     playAnim("Idle",0);
+    if(typeof mpAttachModels==="function")mpAttachModels();
   },undefined,()=>{});
 }
 
@@ -441,6 +456,114 @@ function burstAt(pos,color,n=90,spd=.2){const g=new THREE.BufferGeometry(),p=new
   for(let i=0;i<n;i++){p.set([pos.x,pos.y,pos.z],i*3);v.push(new THREE.Vector3(Math.random()-.5,Math.random()*.8,Math.random()-.5).normalize().multiplyScalar(spd*(.4+Math.random())));}
   g.setAttribute("position",new THREE.BufferAttribute(p,3));
   const pts=new THREE.Points(g,new THREE.PointsMaterial({color,size:.25,transparent:true,depthWrite:false}));scene.add(pts);bursts.push({pts,v,life:1});}
+
+
+/* =========================================================
+   MULTIJOUEUR EN LIGNE
+   ========================================================= */
+const qs=new URLSearchParams(location.search);
+const MP={ws:null,id:null,status:"off",remotes:new Map(),room:(qs.get("salle")||"noel").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,24)||"noel",
+  url:qs.get("serveur")||"wss://secret-santa-nozomi-ws.onrender.com/ws",lastSend:0,retry:0,boardT:0,said:false};
+const MP_COLORS=["#3fa9ff","#38d39f","#ff7ac8","#ffe08a","#c6a6ff","#ff8a5c","#7ee0ff","#b6f36b"];
+function mpColor(id){let h=0;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return MP_COLORS[h%MP_COLORS.length]}
+function mpSetStatus(s){MP.status=s;const chip=$("mpChip");chip.className="chip "+(s==="on"?"on":s==="wait"?"wait":"off");
+  $("mpStatus").textContent=s==="on"?"En ligne":s==="wait"?"Connexion…":"Solo";$("mpBoard").classList.toggle("hidden",s!=="on");}
+function mpRaw(o){if(MP.ws&&MP.ws.readyState===1){try{MP.ws.send(JSON.stringify(o))}catch(e){}}}
+function mpHello(){if(player.name){mpRaw({t:"hi",name:player.name,g:player.g,room:MP.room});MP.said=true}}
+function mpConnect(){
+  if(typeof WebSocket==="undefined")return;
+  mpSetStatus("wait");
+  try{fetch(MP.url.replace(/^ws/,"http").replace(/\/ws$/,"/health"),{mode:"no-cors"}).catch(()=>{})}catch(e){}
+  let ws;try{ws=new WebSocket(MP.url)}catch(e){return mpRetry()}
+  MP.ws=ws;
+  ws.onopen=()=>{MP.retry=0;mpSetStatus("on");if(S.mode!=="menu")mpHello()};
+  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}mpHandle(m)};
+  ws.onclose=()=>{if(MP.ws!==ws)return;MP.ws=null;MP.id=null;MP.remotes.forEach(mpRemove);MP.remotes.clear();mpSetStatus("wait");mpRetry()};
+  ws.onerror=()=>{};
+}
+function mpRetry(){MP.retry++;if(MP.retry>12){mpSetStatus("off");return}setTimeout(mpConnect,Math.min(15000,1500*MP.retry))}
+
+function nameTag(name,color){
+  const c=document.createElement("canvas");c.width=512;c.height=128;const x=c.getContext("2d");
+  x.font="600 64px Teko, Rajdhani, sans-serif";const w=Math.min(500,x.measureText(name).width+70);
+  x.fillStyle="rgba(20,28,43,.88)";x.fillRect((512-w)/2,22,w,86);x.fillStyle=color;x.fillRect((512-w)/2,22,10,86);
+  x.fillStyle="#fff";x.textAlign="center";x.textBaseline="middle";x.fillText(name,261,68);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,transparent:true}));
+  s.scale.set(2.6,.65,1);s.position.y=2.95;s.renderOrder=10;return s;
+}
+function mpModel(rp){
+  if(rp.model)return;
+  if(R.gltf&&THREE.SkeletonUtils){
+    const m=THREE.SkeletonUtils.clone(R.gltf.scene);m.scale.setScalar(R.scale);rp.g.add(m);rp.model=m;
+    rp.mixer=new THREE.AnimationMixer(m);rp.actions={};R.gltf.animations.forEach(a=>rp.actions[a.name]=rp.mixer.clipAction(a));
+    rp.cur=null;mpAnim(rp,rp.anim||"Idle",0);
+    if(rp.fallback){rp.g.remove(rp.fallback);rp.fallback=null}
+  } else if(!rp.fallback){
+    const f=new THREE.Group(),b=new THREE.Mesh(new THREE.CylinderGeometry(.42,.5,1.3,14),white);b.position.y=.9;f.add(b);
+    const hd=new THREE.Mesh(new THREE.SphereGeometry(.4,16,12),white);hd.position.y=1.8;f.add(hd);
+    const v=new THREE.Mesh(new THREE.BoxGeometry(.6,.16,.18),new THREE.MeshBasicMaterial({color:rp.color}));v.position.set(0,1.82,.32);f.add(v);
+    rp.g.add(f);rp.fallback=f;
+  }
+}
+function mpAttachModels(){MP.remotes.forEach(rp=>mpModel(rp))}
+function mpAnim(rp,name,fade=.2,once=false){
+  if(!rp.mixer||!rp.actions[name])return;if(rp.cur===name&&!once)return;
+  const n=rp.actions[name],p=rp.cur&&rp.actions[rp.cur];
+  n.reset();n.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,Infinity);n.clampWhenFinished=once;n.enabled=true;n.setEffectiveWeight(1);n.play();
+  if(p&&p!==n)p.crossFadeTo(n,fade,false);rp.cur=name;rp.once=once?1.6:0;
+}
+function mpAdd(p){
+  let rp=MP.remotes.get(p.id);
+  if(rp){ if(rp.name!==p.name){rp.name=p.name;rp.g.remove(rp.tag);rp.tag=nameTag(p.name,rp.color);rp.g.add(rp.tag)} rp.gender=p.g; return rp; }
+  const color=mpColor(p.id),g=new THREE.Group();scene.add(g);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.55,.75,24),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.8,depthWrite:false}));
+  ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
+  rp={id:p.id,name:p.name,gender:p.g,color,g,tag:nameTag(p.name,color),x:0,y:0,z:0,r:0,tx:0,ty:0,tz:0,tr:0,anim:"Idle",map:"k",mo:"menu",sc:0,cp:0,fresh:true};
+  g.add(rp.tag);g.visible=false;MP.remotes.set(p.id,rp);mpModel(rp);
+  if(p.s)mpState(rp,p.s);
+  return rp;
+}
+function mpRemove(rp){scene.remove(rp.g)}
+function mpState(rp,s){
+  rp.tx=s.x;rp.ty=s.y;rp.tz=s.z;rp.tr=s.r;rp.map=s.m;rp.mo=s.mo;rp.sc=s.sc;rp.cp=s.cp;
+  if(rp.fresh){rp.x=s.x;rp.y=s.y;rp.z=s.z;rp.r=s.r;rp.fresh=false}
+  if(!rp.once)rp.anim=s.a;
+}
+function mpHandle(m){
+  if(m.t==="welcome"){MP.id=m.id;m.players.forEach(mpAdd);
+    if(m.players.length)toast(`${m.players.length} joueur${m.players.length>1?"s":""} déjà en ligne 👋`,"#9fd4ff");}
+  else if(m.t==="join"){const known=MP.remotes.has(m.id);mpAdd(m);if(!known)toast(`${m.name} a rejoint la partie`,"#9fd4ff")}
+  else if(m.t==="s"){const rp=MP.remotes.get(m.id)||mpAdd({id:m.id,name:"?",g:"m"});mpState(rp,m)}
+  else if(m.t==="bye"){const rp=MP.remotes.get(m.id);if(rp){mpRemove(rp);MP.remotes.delete(m.id);if(rp.mo!=="menu")toast(`${rp.name} a quitté la partie`,"#9fb0c8")}}
+  else if(m.t==="emote"){const rp=MP.remotes.get(m.id);if(rp){mpAnim(rp,m.e,.2,true);rp.anim=m.e}}
+  else if(m.t==="ev"&&m.kind==="finish"){const rp=MP.remotes.get(m.id);if(rp)toast(`🏆 ${rp.name} a terminé avec ${m.sc}/12 !`,"#ffe08a")}
+  else if(m.t==="full"){toast("Salon plein : tu joues en solo","#9fb0c8")}
+}
+function mpEmote(e){playAnim(e,.2,true);mpRaw({t:"emote",e})}
+function mpUpdate(dt,t){
+  const k=1-Math.exp(-dt*10);
+  MP.remotes.forEach(rp=>{
+    const vis=rp.mo!=="menu"&&rp.map===S.map&&S.mode!=="menu";rp.g.visible=vis;
+    rp.x+=(rp.tx-rp.x)*k;rp.y+=(rp.ty-rp.y)*k;rp.z+=(rp.tz-rp.z)*k;rp.r=angLerp(rp.r,rp.tr,k);
+    rp.g.position.set(rp.x,rp.y,rp.z);if(rp.model)rp.model.rotation.y=rp.r;if(rp.fallback)rp.fallback.rotation.y=rp.r;
+    if(rp.once>0){rp.once-=dt;if(rp.once<=0)rp.once=0}
+    if(!rp.once)mpAnim(rp,rp.anim,.2);
+    if(rp.mixer)rp.mixer.update(dt);
+  });
+  if(MP.ws&&MP.ws.readyState===1&&MP.said&&S.mode!=="menu"&&t-MP.lastSend>.1){
+    MP.lastSend=t;const sc=S.results.filter(r=>r.ok).length;
+    mpRaw({t:"s",x:P.x,y:P.y,z:P.z,r:P.rot,a:R.cur||"Idle",m:S.map,mo:S.mode,sc,cp:S.results.length});
+  }
+  if(t-MP.boardT>.5&&MP.status==="on"){MP.boardT=t;mpBoard()}
+}
+function mpBoard(){
+  const rows=[{name:(player.name||"Toi")+" (toi)",sc:S.results.filter(r=>r.ok).length,cp:S.results.length,map:S.map,color:"#f99e1a",me:true,mo:S.mode}];
+  MP.remotes.forEach(rp=>{if(rp.mo!=="menu")rows.push({name:rp.name,sc:rp.sc,cp:rp.cp,map:rp.map,color:rp.color,mo:rp.mo})});
+  rows.sort((a,b)=>b.sc-a.sc||b.cp-a.cp);
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  $("mpBoard").innerHTML=`<div class="h">En ligne · ${rows.length} joueur${rows.length>1?"s":""}</div>`+rows.map(r=>
+    `<div class="r${r.me?" me":""}"><span><i style="background:${r.color}"></i>${esc(r.name)} ${r.mo==="end"?"🏆":r.map==="m"?"🪐":"⛩️"}</span><span>${r.sc}/12</span></div>`).join("");
+}
 
 /* =========================================================
    ÉTAT DU JEU
@@ -455,6 +578,8 @@ addEventListener("keydown",e=>{
   if(S.mode!=="play"||S.paused)return;
   keys[e.code]=true;
   if(e.code==="Space"){jumpQueued=true;e.preventDefault()}
+  if(e.code==="KeyE"&&!e.repeat)mpEmote("Wave");
+  if(e.code==="KeyR"&&!e.repeat)mpEmote("Dance");
   if(e.code.startsWith("Arrow"))e.preventDefault();
 });
 addEventListener("keyup",e=>{keys[e.code]=false});
@@ -478,6 +603,7 @@ cv.addEventListener("pointermove",e=>{
 const endPtr=e=>{if(e.pointerId===joyId){joyId=null;joy.x=joy.y=0;$("joy").classList.add("hidden");$("joyKnob").style.transform=""}
   if(camDrag&&e.pointerId===camDrag.id)camDrag=null;};
 cv.addEventListener("pointerup",endPtr);cv.addEventListener("pointercancel",endPtr);
+$("emoteBtn").addEventListener("pointerdown",e=>{e.preventDefault();if(S.mode==="play"&&!S.paused)mpEmote("Wave")});
 $("jumpBtn").addEventListener("pointerdown",e=>{e.preventDefault();if(S.mode==="play"&&!S.paused)jumpQueued=true});
 
 /* ---------- HUD ---------- */
@@ -549,9 +675,9 @@ function resetWorld(){
   Object.assign(P,{x:0,y:0,z:20,vx:0,vy:0,vz:0,ground:true,rot:Math.PI});yaw=0;pitch=.35;
 }
 function startGame(){
-  resetWorld();R.oneShot=false;playAnim("Idle",.2);hidePanels();S.mode="play";S.paused=false;
+  resetWorld();R.oneShot=false;playAnim("Idle",.2);mpHello();hidePanels();S.mode="play";S.paused=false;
   PG.visible=shadow.visible=arrow.visible=true;
-  $("hud").classList.remove("hidden");$("jumpBtn").classList.toggle("hidden",!isTouch);
+  $("hud").classList.remove("hidden");$("jumpBtn").classList.toggle("hidden",!isTouch);$("emoteBtn").classList.toggle("hidden",!isTouch);
   const h=$("help");h.classList.toggle("hidden",isTouch);h.style.opacity=1;setTimeout(()=>h.style.opacity=0,12000);
   camera.position.set(0,6,30);updateHUD();banner("Kanezaka");
   setTimeout(()=>toast("Capture les 6 points hexagonaux !"),1300);
@@ -559,6 +685,7 @@ function startGame(){
 function endGame(){
   S.mode="end";S.paused=true;$("hud").classList.add("hidden");
   playAnim("Dance",.3);
+  mpRaw({t:"ev",kind:"finish",sc:S.results.filter(r=>r.ok).length});
   for(let i=0;i<6;i++)setTimeout(()=>burstAt(new THREE.Vector3(P.x+(Math.random()-.5)*6,2+Math.random()*3,P.z+(Math.random()-.5)*6),[0xf99e1a,0x3fa9ff,0xff7ac8,0xffe08a][i%4],120,.3),i*250);
   const score=S.results.filter(r=>r.ok).length;
   banner(player.special?"Légendaire !":(score>=6?"Victoire !":"Mission terminée"),player.special?"#ff7ac8":"var(--or)");
@@ -643,6 +770,7 @@ function step(dt,t){
 
   if(R.mixer)R.mixer.update(dt);
   if(S.mode==="play"&&!S.paused)step(dt,t);
+  mpUpdate(dt,t);
 
   if(S.mode==="play"||S.mode==="end"){
     if(S.mode==="end")yaw+=dt*.25;
@@ -684,8 +812,9 @@ $("backBtn").onclick=()=>showPanel("profile");
 $("startBtn").onclick=startGame;
 $("retryBtn").onclick=startGame;
 $("nextPlayerBtn").onclick=()=>{$("nameIn").value="";player.g="";[...$("genderSeg").children].forEach(x=>x.classList.remove("on"));checkProfile();
-  S.mode="menu";PG.visible=shadow.visible=arrow.visible=false;resetWorld();showPanel("profile");};
+  S.mode="menu";mpRaw({t:"s",x:0,y:0,z:0,r:0,a:"Idle",m:"k",mo:"menu",sc:0,cp:0});PG.visible=shadow.visible=arrow.visible=false;resetWorld();showPanel("profile");};
 resetWorld();
+mpConnect();
 
 /* =========================================================
    DIPLÔME (dessiné sur canvas, exporté en PDF)

@@ -1,0 +1,8 @@
+{
+  "name": "secret-santa-nozomi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mini-jeu 3D Secret Santa + serveur multijoueur",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
