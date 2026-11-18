@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secret Santa de Nozomi — De Kanezaka jusqu'à Mars</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+  :root{--or:#f99e1a;--or2:#ffb84d;--blue:#3fa9ff;--navy:#141c2b;--ink:#f4f7fb;--muted:#9fb0c8;--good:#38d39f;--bad:#ff4655;--panel:rgba(18,26,42,.88);--cut:18px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0b111d;color:var(--ink);font-family:'Rajdhani',system-ui,sans-serif;font-weight:600;user-select:none;-webkit-user-select:none}
+  #scene{position:fixed;inset:0;display:block;touch-action:none}
+  .ui{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;pointer-events:none;z-index:5}
+  .hidden{display:none!important}
+  .panel{pointer-events:auto;position:relative;width:min(640px,100%);max-height:100%;overflow:auto;background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));padding:26px 30px 26px 36px;animation:slide .4s cubic-bezier(.2,.9,.25,1)}
+  .panel:before{content:"";position:absolute;left:0;top:var(--cut);bottom:0;width:6px;background:var(--or)}
+  @keyframes slide{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+  .eyebrow{font-family:'Teko';font-weight:600;letter-spacing:.18em;font-size:18px;color:var(--or);text-transform:uppercase;line-height:1}
+  h1{font-family:'Teko';font-weight:700;font-style:italic;text-transform:uppercase;font-size:clamp(44px,8vw,72px);line-height:.85;margin:6px 0 4px}
+  h1 span{color:var(--or)}
+  h2{font-family:'Teko';font-weight:600;font-style:italic;text-transform:uppercase;font-size:34px;line-height:1;margin:4px 0 12px}
+  p.lead{color:var(--muted);line-height:1.5;font-size:17px;margin:10px 0 16px} p.lead b{color:var(--ink)}
+  .btn{appearance:none;border:0;cursor:pointer;font-family:'Teko';font-weight:600;font-size:26px;letter-spacing:.06em;text-transform:uppercase;color:#141c2b;background:var(--or);padding:8px 30px 4px;transform:skewX(-14deg);transition:background .15s,transform .15s;display:inline-block}
+  .btn>span{display:inline-block;transform:skewX(14deg)}
+  .btn:hover{background:var(--or2);transform:skewX(-14deg) translateY(-2px)}
+  .btn:disabled{background:#5a6478;cursor:not-allowed;transform:skewX(-14deg)}
+  .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px rgba(255,255,255,.5)}
+  .btn.ghost:hover{background:rgba(255,255,255,.1)}
+  label.f{display:block;font-family:'Teko';letter-spacing:.14em;font-size:18px;color:var(--muted);text-transform:uppercase;margin:14px 0 6px}
+  input.name{width:100%;font:inherit;font-size:22px;color:var(--ink);background:rgba(255,255,255,.07);border:0;border-bottom:3px solid var(--or);padding:10px 14px;outline:none;user-select:text}
+  .seg{display:flex;gap:10px}
+  .seg button{flex:1;font-family:'Teko';font-size:24px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;color:var(--ink);background:rgba(255,255,255,.07);border:0;padding:8px 0 4px;transform:skewX(-14deg)}
+  .seg button>span{display:inline-block;transform:skewX(14deg)}
+  .seg button.on{background:var(--blue);color:#06121f}
+  .actions{display:flex;gap:16px;align-items:center;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+  .controls{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:16px;color:#dbe4f0;margin:6px 0 4px}
+  .key{font-family:'Teko';font-size:20px;letter-spacing:.05em;background:rgba(255,255,255,.12);padding:2px 10px 0;text-align:center;color:var(--or)}
+
+  /* question */
+  .hudq{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .badge{font-family:'Teko';font-size:20px;letter-spacing:.1em;text-transform:uppercase;padding:2px 14px 0;transform:skewX(-14deg);display:inline-block}
+  .badge>span{display:inline-block;transform:skewX(14deg)}
+  .badge.kiriko{background:#d8364a;color:#fff}.badge.juno{background:#e85fb8;color:#fff}.badge.ow{background:var(--or);color:#141c2b}
+  .count{font-family:'Teko';font-size:22px;letter-spacing:.08em;color:var(--muted)} .count b{color:var(--ink);font-size:28px}
+  .q{font-size:clamp(20px,3.4vw,25px);font-weight:700;line-height:1.3;margin-bottom:16px}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:560px){.choices{grid-template-columns:1fr}}
+  .choice{position:relative;text-align:left;font:inherit;font-size:18px;color:var(--ink);cursor:pointer;padding:12px 16px 12px 44px;background:rgba(255,255,255,.07);border:0;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+  .choice .k{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-family:'Teko';font-size:22px;color:var(--or)}
+  .choice:hover:not(:disabled){background:rgba(249,158,26,.25)}
+  .choice.good{background:rgba(56,211,159,.3)}.choice.bad{background:rgba(255,70,85,.3)}.choice:disabled{cursor:default}
+  .feedback{margin-top:14px;padding:10px 14px;background:rgba(0,0,0,.25);border-left:4px solid var(--good);line-height:1.45;font-size:16px;color:#dbe4f0}
+  .feedback.ko{border-left-color:var(--bad)}
+  .feedback b{font-family:'Teko';font-size:24px;letter-spacing:.06em;text-transform:uppercase;display:block;line-height:1;margin-bottom:4px}
+  .feedback.okb b{color:var(--good)}.feedback.ko b{color:var(--bad)}
+  .row{display:flex;justify-content:flex-end;margin-top:14px}
+
+  /* HUD */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:4}
+  .obj{position:absolute;left:18px;top:16px;background:var(--panel);padding:10px 18px 10px 20px;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);min-width:240px}
+  .obj:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--or)}
+  #hudObj{font-family:'Teko';font-size:26px;line-height:1;letter-spacing:.03em;text-transform:uppercase;margin-top:4px}
+  .pips{display:flex;gap:4px;margin-top:8px}
+  .pips i{width:26px;height:8px;background:rgba(255,255,255,.18);transform:skewX(-20deg)}
+  .pips i.ok{background:var(--good)}.pips i.ko{background:var(--bad)}
+  .hud-r{position:absolute;right:18px;top:16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .chip{background:var(--panel);padding:6px 14px 4px;font-family:'Teko';font-size:22px;letter-spacing:.05em;transform:skewX(-14deg)}
+  .chip>span{display:inline-block;transform:skewX(14deg)} .chip b{color:var(--or)}
+  #capRing{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);text-align:center;font-family:'Teko';font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:var(--or);text-shadow:0 2px 6px #000}
+  #capRing svg{width:110px;height:110px;display:block;margin:0 auto 2px;transform:rotate(-90deg)}
+  #capRing .bg{fill:none;stroke:rgba(255,255,255,.2);stroke-width:8}
+  #capRing .fg{fill:none;stroke:var(--or);stroke-width:8;stroke-dasharray:314;stroke-dashoffset:314}
+  #toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-family:'Teko';font-size:clamp(26px,4vw,38px);letter-spacing:.06em;text-transform:uppercase;text-align:center;
+    color:#fff;text-shadow:0 3px 12px rgba(0,0,0,.7);opacity:0;transition:opacity .3s;white-space:nowrap}
+  #toast.on{opacity:1}
+  #help{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:var(--panel);padding:6px 18px 4px;font-size:15px;color:#dbe4f0;transition:opacity 1s;white-space:nowrap}
+  #help b{color:var(--or);font-family:'Teko';font-size:19px;letter-spacing:.05em}
+  #joy{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(20,28,43,.35);transform:translate(-50%,-50%)}
+  #joyKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(249,158,26,.85)}
+  #jumpBtn{position:absolute;right:26px;bottom:34px;width:84px;height:84px;border-radius:50%;border:0;background:rgba(249,158,26,.85);color:#141c2b;font-family:'Teko';font-size:24px;letter-spacing:.05em;pointer-events:auto;touch-action:none}
+  .flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:8;transition:opacity .5s}
+  .flash.on{opacity:1}
+  .banner{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;pointer-events:none;z-index:7;font-family:'Teko';font-weight:700;font-style:italic;text-transform:uppercase;
+    font-size:clamp(70px,16vw,170px);line-height:1;color:var(--or);text-shadow:0 6px 30px rgba(0,0,0,.6);opacity:0}
+  .banner.go{animation:ban 1.7s ease forwards}
+  @keyframes ban{0%{opacity:0;transform:translateY(-50%) scale(1.6)}15%{opacity:1;transform:translateY(-50%) scale(1)}75%{opacity:1}100%{opacity:0}}
+
+  /* diplôme */
+  #diploma{pointer-events:auto;width:min(980px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;align-items:center;animation:slide .5s}
+  #dipCv{width:100%;height:auto;display:block;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .d-actions{display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+  .hint{font-size:15px;color:#dbe4f0;text-align:center;margin-top:10px;min-height:20px;text-shadow:0 1px 4px #000}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="flash" id="flash"></div>
+<div class="banner" id="banner"></div>
+
+<!-- HUD de jeu -->
+<div id="hud" class="hidden">
+  <div class="obj"><div class="eyebrow" id="hudMap">Kanezaka</div><div id="hudObj">Capture les points</div><div class="pips" id="hudPips"></div></div>
+  <div class="hud-r">
+    <div class="chip"><span>⏱ <b id="hudTime">0:00</b></span></div>
+    <div class="chip"><span id="hudColLbl">📜 Ofuda</span> <span><b id="hudCol">0/8</b></span></div>
+    <div class="chip"><span>✔ <b id="hudScore">0</b></span></div>
+  </div>
+  <div id="capRing" class="hidden"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="50"/><circle class="fg" id="capArc" cx="60" cy="60" r="50"/></svg>Capture…</div>
+  <div id="toast"></div>
+  <div id="help"><b>ZQSD / WASD</b> ou <b>flèches</b> : bouger · <b>Espace</b> : sauter · <b>Clic + souris</b> : caméra</div>
+  <div id="joy" class="hidden"><i id="joyKnob"></i></div>
+  <button id="jumpBtn" class="hidden">Saut</button>
+</div>
+
+<div class="ui">
+  <!-- Profil -->
+  <div class="panel" id="profile">
+    <div class="eyebrow">Secret Santa 2026 · Mini-jeu</div>
+    <h1>De Kanezaka<br><span>jusqu'à Mars</span></h1>
+    <p class="lead">Explore Kanezaka puis la surface de Mars et capture <b>12 points</b>. Chaque point cache une question sur <b>Kiriko</b>, <b>Juno</b> et Overwatch. À la fin, tu repars avec ton diplôme en PDF.</p>
+    <label class="f" for="nameIn">Ton pseudo</label>
+    <input class="name" id="nameIn" maxlength="22" placeholder="Entre ton nom…" autocomplete="off">
+    <label class="f">Tu préfères qu'on te genre…</label>
+    <div class="seg" id="genderSeg">
+      <button data-g="f"><span>Au féminin</span></button>
+      <button data-g="m"><span>Au masculin</span></button>
+    </div>
+    <div class="actions"><button class="btn" id="profileBtn" disabled><span>Valider</span></button></div>
+  </div>
+
+  <!-- Briefing -->
+  <div class="panel hidden" id="intro">
+    <div class="eyebrow" id="introEyebrow">Briefing de mission</div>
+    <h2 id="introTitle"></h2>
+    <p class="lead" id="introText"></p>
+    <div class="controls" id="ctrlDesk">
+      <span class="key">ZQSD / WASD</span><span>Se déplacer (ou les flèches)</span>
+      <span class="key">ESPACE</span><span>Sauter (on saute beaucoup plus haut sur Mars !)</span>
+      <span class="key">CLIC + SOURIS</span><span>Tourner la caméra</span>
+    </div>
+    <div class="controls hidden" id="ctrlTouch">
+      <span class="key">GAUCHE</span><span>Joystick pour se déplacer</span>
+      <span class="key">DROITE</span><span>Glisse pour tourner la caméra</span>
+      <span class="key">SAUT</span><span>Bouton en bas à droite</span>
+    </div>
+    <p class="lead" style="margin-top:10px">Reste sur un <b>point hexagonal</b> pour le capturer. La flèche orange au-dessus de ta tête montre le prochain objectif. Bonus : ramasse les <b>ofuda</b> à Kanezaka et les <b>éclats d'étoile</b> sur Mars.</p>
+    <div class="actions">
+      <button class="btn ghost" id="backBtn"><span>Changer de joueur</span></button>
+      <button class="btn" id="startBtn"><span>Jouer</span></button>
+    </div>
+  </div>
+
+  <!-- Question -->
+  <div class="panel hidden" id="quiz">
+    <div class="hudq"><span class="badge" id="qTag"><span></span></span><span class="count" id="qCount"></span></div>
+    <div class="q" id="qText"></div>
+    <div class="choices" id="qChoices"></div>
+    <div class="feedback hidden" id="qFeedback"></div>
+    <div class="row hidden" id="qNextRow"><button class="btn" id="qNext"><span>Continuer</span></button></div>
+  </div>
+
+  <!-- Diplôme -->
+  <div class="hidden" id="diploma">
+    <canvas id="dipCv" width="2000" height="1414"></canvas>
+    <div class="d-actions">
+      <button class="btn" id="pdfBtn"><span>Télécharger en PDF</span></button>
+      <button class="btn ghost" id="retryBtn"><span>Rejouer</span></button>
+      <button class="btn ghost" id="nextPlayerBtn"><span>Joueur suivant</span></button>
+    </div>
+    <div class="hint" id="pdfHint"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* =========================================================
+   PERSONNALISATION
+   ========================================================= */
+const SPECIAL_NAME = "nozomi";
+const SPECIAL_MESSAGE = "Merci pour toutes les games, les fous rires sur Discord et les heals au bon moment. Joyeux Noël ! — Ton Secret Santa";
+
+/* ---------------- Questions ---------------- */
+const QUESTIONS = [
+  {tag:"kiriko", q:"De quelle ville japonaise vient Kiriko ?", a:["Kanezaka","Hanamura","Busan","Numbani"], c:0,
+   e:"Kiriko protège Kanezaka, la ville où se trouve le sanctuaire de sa famille."},
+  {tag:"kiriko", q:"Quel esprit Kiriko invoque-t-elle avec son ultime, la Ruée du kitsune ?", a:["Un renard","Un dragon","Une grue","Un loup"], c:0,
+   e:"Le kitsune est un esprit-renard. Il trace un chemin qui accélère les déplacements, les tirs et les compétences de l'équipe."},
+  {tag:"kiriko", q:"Avec quoi Kiriko soigne-t-elle ses alliés ?", a:["Des ofuda (talismans en papier)","Des fléchettes biotiques","Un bâton caducée","Des orbes d'harmonie"], c:0,
+   e:"Ses ofuda de soins se dirigent tout seuls vers l'allié qu'elle vise. Comme ceux que tu ramasses ici !"},
+  {tag:"kiriko", q:"Quelle compétence purifie les effets négatifs et rend brièvement invulnérable ?", a:["Le Suzu protecteur","La Sphère de discorde","La Matrice de défense","L'Ange gardien"], c:0,
+   e:"Le Suzu, une clochette lancée sur les alliés, efface les effets négatifs et rend invulnérable un court instant."},
+  {tag:"kiriko", q:"Comment s'appelle la téléportation de Kiriko vers un allié ?", a:["Pas rapide","Translocateur","Clignement","Saut de l'ange"], c:0,
+   e:"Pas rapide (Swift Step) l'envoie direct sur un allié, même à travers les murs."},
+  {tag:"kiriko", q:"Quel passif de mobilité Kiriko partage-t-elle avec Hanzo et Genji ?", a:["L'escalade murale","Le double saut","Le vol plané","Le grappin"], c:0,
+   e:"Tous les trois peuvent grimper aux murs."},
+  {tag:"juno", q:"De quelle planète vient Juno ?", a:["Mars","La Lune","Vénus","Jupiter"], c:0,
+   e:"Juno est née et a grandi sur Mars. Bienvenue chez elle !"},
+  {tag:"juno", q:"Quel est l'ultime de Juno ?", a:["Rayon orbital","Transcendance","Flux gravitique","Valkyrie"], c:0,
+   e:"Le Rayon orbital (Orbital Ray) frappe depuis l'orbite : il soigne les alliés et augmente leurs dégâts. Les autres réponses sont les ultimes de Zenyatta, Sigma et Ange."},
+  {tag:"juno", q:"Quel anneau Juno lance-t-elle pour accélérer les alliés qui passent dedans ?", a:["L'Hyper-anneau","L'Anneau de feu","Le Portail","L'Anneau gravitationnel"], c:0,
+   e:"L'Hyper-anneau (Hyper Ring) donne un gros bonus de vitesse. Les anneaux roses de cette carte font pareil !"},
+  {tag:"juno", q:"Quelle compétence de Juno verrouille plusieurs cibles pour soigner ou blesser ?", a:["Les Torpilles Pulsar","Le Tir hélix","La Salve de roquettes","Les Micro-missiles"], c:0,
+   e:"Les Torpilles Pulsar soignent les alliés verrouillés et blessent les ennemis."},
+  {tag:"juno", q:"En quelle année Juno est-elle arrivée dans Overwatch 2 ?", a:["2024","2022","2023","2025"], c:0,
+   e:"Juno est sortie en août 2024, avec la saison 12. Kiriko, elle, est arrivée au lancement d'Overwatch 2 en octobre 2022."},
+  {tag:"ow", q:"Question bonus : combien de joueurs par équipe en file par rôle sur Overwatch 2 ?", a:["5","6","4","7"], c:0,
+   e:"Depuis Overwatch 2, c'est 5 contre 5 : 1 tank, 2 DPS et 2 supports (comme Kiriko et Juno 😉)."}
+];
+
+/* ---------------- Utilitaires ---------------- */
+const $=id=>document.getElementById(id);
+const player={name:"",g:"",special:false};
+const G=(f,m)=>player.g==="f"?f:m;
+const norm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").trim().toLowerCase();
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const fmtTime=s=>{s=Math.floor(s);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+const isTouch=matchMedia("(pointer:coarse)").matches;
+function showPanel(id){["profile","intro","quiz","diploma"].forEach(x=>$(x).classList.toggle("hidden",x!==id))}
+function hidePanels(){["profile","intro","quiz","diploma"].forEach(x=>$(x).classList.add("hidden"))}
+function banner(t,c){const b=$("banner");b.textContent=t;b.style.color=c||"var(--or)";b.classList.remove("go");void b.offsetWidth;b.classList.add("go")}
+let toastT=0;function toast(m,c){const t=$("toast");t.textContent=m;t.style.color=c||"#fff";t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),2200)}
+
+/* capacité de téléchargement */
+let DL=null, dlChecked=false;
+try{ if(window.claude&&claude.use){ claude.use("downloads").then(d=>{DL=d;dlChecked=true}).catch(()=>{dlChecked=true}) } else dlChecked=true }catch(e){dlChecked=true}
+
+/* =========================================================
+   MOTEUR 3D
+   ========================================================= */
+const renderer=new THREE.WebGLRenderer({canvas:$("scene"),antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(60,1,.1,1500);
+function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}
+addEventListener("resize",resize);resize();
+
+const FOG_K=new THREE.Color(0xe08a6e), FOG_M=new THREE.Color(0x7a3524);
+scene.fog=new THREE.Fog(FOG_K.clone(),30,120);
+const skyU={k:{value:0}}; let skyTarget=0;
+const sky=new THREE.Mesh(new THREE.SphereGeometry(700,32,16),new THREE.ShaderMaterial({uniforms:skyU,side:THREE.BackSide,depthWrite:false,fog:false,
+  vertexShader:"varying vec3 vP;void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
+  fragmentShader:`uniform float k;varying vec3 vP;void main(){float h=normalize(vP).y;
+   vec3 top=mix(vec3(.09,.16,.34),vec3(.01,.005,.03),k),mid=mix(vec3(.55,.36,.55),vec3(.2,.07,.09),k),hor=mix(vec3(1.,.62,.38),vec3(.8,.42,.25),k);
+   vec3 c=mix(hor,mid,smoothstep(-.02,.2,h));c=mix(c,top,smoothstep(.2,.65,h));gl_FragColor=vec4(c,1.);}`}));
+sky.renderOrder=-1;scene.add(sky);
+const starMat=new THREE.PointsMaterial({color:0xffffff,size:1.4,transparent:true,opacity:0,fog:false,depthWrite:false});
+{const g=new THREE.BufferGeometry(),N=2500,p=new Float32Array(N*3);
+ for(let i=0;i<N;i++){const r=350+Math.random()*250,t=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*1.1-.1);
+  p[i*3]=r*Math.sin(ph)*Math.cos(t);p[i*3+1]=r*Math.cos(ph);p[i*3+2]=r*Math.sin(ph)*Math.sin(t);}
+ g.setAttribute("position",new THREE.BufferAttribute(p,3));scene.add(new THREE.Points(g,starMat));}
+
+scene.add(new THREE.HemisphereLight(0xffd8c0,0x2a2440,.9));
+const sunL=new THREE.DirectionalLight(0xffc090,1.1);sunL.position.set(-30,40,-20);scene.add(sunL);
+
+const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.8},o));
+const basic=(c,o={})=>new THREE.MeshBasicMaterial(Object.assign({color:c},o));
+
+/* ---------- Carte 1 : Kanezaka ---------- */
+const GK=new THREE.Group();scene.add(GK);
+const GM=new THREE.Group();scene.add(GM);GM.visible=false;
+const colliders={k:[],m:[]};
+const addCol=(map,x,z,r)=>colliders[map].push({x,z,r});
+
+{ const g=new THREE.CircleGeometry(200,64);g.rotateX(-Math.PI/2);GK.add(new THREE.Mesh(g,mat(0x4a3a4c,{roughness:1})));
+  const yard=new THREE.CircleGeometry(40,64);yard.rotateX(-Math.PI/2);const y=new THREE.Mesh(yard,mat(0x6b5a62,{roughness:1}));y.position.y=.01;GK.add(y);
+  for(let i=0;i<22;i++){const s=new THREE.Mesh(new THREE.BoxGeometry(2.6,.16,1.1),mat(0x8a7e86));s.position.set(Math.sin(i*.25)*.3,.08,18-i*1.35);GK.add(s);}
+  // collines
+  for(let i=0;i<14;i++){const h=12+Math.random()*18,a=i/14*Math.PI*2,m=new THREE.Mesh(new THREE.ConeGeometry(16+Math.random()*12,h,6),mat(0x5a4060,{flatShading:true,roughness:1}));
+    m.position.set(Math.cos(a)*85,h/2-1,Math.sin(a)*85);GK.add(m);}
+  // muret d'enceinte
+  for(let i=0;i<64;i++){const a=i/64*Math.PI*2;if(Math.abs(Math.sin(a))<.05&&Math.cos(a)>0)continue;
+    const b=new THREE.Mesh(new THREE.BoxGeometry(3.8,.9,.6),mat(0x7a6e78));b.position.set(Math.cos(a)*39.5,.45,Math.sin(a)*39.5);b.rotation.y=-a+Math.PI/2;GK.add(b);}
+}
+function torii(z,s){const red=mat(0xd8364a,{roughness:.55}),dark=mat(0x1d1820),g=new THREE.Group();
+  [-2.2,2.2].forEach(x=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(.28,.32,6,16),red);c.position.set(x,3,0);g.add(c);addCol("k",x*s,z,.45*s)});
+  const a=new THREE.Mesh(new THREE.BoxGeometry(6.8,.45,.7),dark);a.position.y=6.3;g.add(a);
+  const b=new THREE.Mesh(new THREE.BoxGeometry(6.3,.35,.6),red);b.position.y=5.95;g.add(b);
+  const c=new THREE.Mesh(new THREE.BoxGeometry(5.6,.3,.4),red);c.position.y=4.9;g.add(c);
+  g.position.z=z;g.scale.setScalar(s);GK.add(g);}
+torii(12,1.1);torii(5,.95);torii(-1,.85);
+{ const base=new THREE.Mesh(new THREE.BoxGeometry(7,.7,5.5),mat(0x7a6e78));base.position.set(0,.35,-15);GK.add(base);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(5.4,3.4,4),mat(0x6b3424));body.position.set(0,2.4,-15);GK.add(body);
+  const r=new THREE.Mesh(new THREE.ConeGeometry(5.2,2.6,4),mat(0x2a2232,{roughness:.6}));r.rotation.y=Math.PI/4;r.position.set(0,5.4,-15);r.scale.set(1.15,1,.9);GK.add(r);
+  const gl=new THREE.Mesh(new THREE.PlaneGeometry(1.8,2.2),basic(0xffc27a));gl.position.set(0,2.2,-12.98);GK.add(gl);
+  const l=new THREE.PointLight(0xffa24a,1.3,20);l.position.set(0,2.5,-11.5);GK.add(l);addCol("k",0,-15,4.2);
+}
+[[-3.6,15],[3.6,15],[-3.6,8],[3.6,8],[-3.6,1],[3.6,1]].forEach(([x,z])=>{const st=mat(0x8a8090),g=new THREE.Group();
+  const p=new THREE.Mesh(new THREE.CylinderGeometry(.18,.25,1.4,8),st);p.position.y=.7;g.add(p);
+  const b=new THREE.Mesh(new THREE.BoxGeometry(.7,.6,.7),basic(0xffc27a));b.position.y=1.7;g.add(b);
+  const c=new THREE.Mesh(new THREE.ConeGeometry(.65,.5,4),st);c.rotation.y=Math.PI/4;c.position.y=2.25;g.add(c);
+  g.position.set(x,0,z);GK.add(g);addCol("k",x,z,.55);});
+const KPTS=[[-14,10],[14,8],[-20,-5],[19,-7],[-10,-24],[11,-25]];
+for(let i=0;i<20;i++){ // cerisiers
+  let x,z,ok=false,tries=0;
+  while(!ok&&tries++<50){const a=Math.random()*Math.PI*2,r=24+Math.random()*12;x=Math.cos(a)*r;z=Math.sin(a)*r;
+    ok=KPTS.every(p=>Math.hypot(p[0]-x,p[1]-z)>5)&&Math.abs(x)>5;}
+  const g=new THREE.Group(),tr=new THREE.Mesh(new THREE.CylinderGeometry(.25,.4,3.2,7),mat(0x4a2a22));tr.position.y=1.6;g.add(tr);
+  for(let j=0;j<4;j++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(1.4+Math.random()*.8,0),mat(j%2?0xffa8cc:0xff8fbd,{flatShading:true}));
+    b.position.set((Math.random()-.5)*2,3.6+Math.random()*1.2,(Math.random()-.5)*2);g.add(b);}
+  g.position.set(x,0,z);GK.add(g);addCol("k",x,z,.7);
+}
+const PN=350,petG=new THREE.BufferGeometry(),petP=new Float32Array(PN*3);
+for(let i=0;i<PN;i++){petP[i*3]=(Math.random()-.5)*70;petP[i*3+1]=Math.random()*16;petP[i*3+2]=(Math.random()-.5)*70;}
+petG.setAttribute("position",new THREE.BufferAttribute(petP,3));
+GK.add(new THREE.Points(petG,new THREE.PointsMaterial({color:0xffb3d4,size:.22})));
+
+/* ---------- Carte 2 : Mars ---------- */
+{ const g=new THREE.CircleGeometry(220,64);g.rotateX(-Math.PI/2);GM.add(new THREE.Mesh(g,mat(0xb04a2a,{roughness:1})));
+  for(let i=0;i<16;i++){const h=14+Math.random()*22,a=i/16*Math.PI*2,m=new THREE.Mesh(new THREE.ConeGeometry(20+Math.random()*14,h,5),mat(0x8a3a22,{flatShading:true,roughness:1}));
+    m.position.set(Math.cos(a)*95,h/2-1,Math.sin(a)*95);GM.add(m);}
+  for(let i=0;i<10;i++){const r=2+Math.random()*4,t=new THREE.Mesh(new THREE.TorusGeometry(r,.45,6,28),mat(0x8e3a20,{flatShading:true}));
+    t.rotation.x=Math.PI/2;t.scale.z=.5;const a=Math.random()*Math.PI*2,d=8+Math.random()*34;t.position.set(Math.cos(a)*d,.05,Math.sin(a)*d);GM.add(t);}
+  const earth=new THREE.Mesh(new THREE.SphereGeometry(40,32,32),new THREE.MeshBasicMaterial({color:0x3f7fd6,fog:false}));earth.position.set(-260,200,-420);GM.add(earth);
+  const moonS=new THREE.Mesh(new THREE.SphereGeometry(10,16,16),new THREE.MeshBasicMaterial({color:0x9a8a80,fog:false}));moonS.position.set(220,150,-350);GM.add(moonS);
+  // dômes de la colonie
+  const dome=(x,z,r)=>{const d=new THREE.Mesh(new THREE.SphereGeometry(r,32,16,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:0xbfe4ff,transparent:true,opacity:.35,roughness:.1,metalness:.3}));
+    d.position.set(x,0,z);GM.add(d);const ring=new THREE.Mesh(new THREE.TorusGeometry(r,.3,8,48),mat(0xe8edf5,{metalness:.4}));ring.rotation.x=Math.PI/2;ring.position.set(x,.2,z);GM.add(ring);
+    const inner=new THREE.Mesh(new THREE.BoxGeometry(r*.8,r*.5,r*.8),mat(0xf2f4f8));inner.position.set(x,r*.25,z);GM.add(inner);
+    const lt=new THREE.PointLight(0x9fd4ff,1,r*3);lt.position.set(x,r*.8,z);GM.add(lt);addCol("m",x,z,r+.2);};
+  dome(0,-9,5);dome(-24,16,3.5);dome(25,-24,3.2);
+  const ant=new THREE.Group();const m1=new THREE.Mesh(new THREE.CylinderGeometry(.15,.2,9,8),mat(0xdde3ee,{metalness:.5}));m1.position.y=4.5;ant.add(m1);
+  const dish=new THREE.Mesh(new THREE.SphereGeometry(1.4,16,8,0,Math.PI*2,0,Math.PI/3),mat(0xffffff,{side:THREE.DoubleSide}));dish.position.y=8.6;dish.rotation.x=-.8;ant.add(dish);
+  const bl=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),basic(0xff4655));bl.position.y=9.2;ant.add(bl);ant.position.set(6,0,-14);GM.add(ant);addCol("m",6,-14,.5);
+}
+const MPTS=[[-15,11],[15,13],[-22,-6],[21,-4],[-9,-24],[10,-21]];
+for(let i=0;i<26;i++){let x,z,ok=false,t=0;
+  while(!ok&&t++<60){const a=Math.random()*Math.PI*2,r=6+Math.random()*38;x=Math.cos(a)*r;z=Math.sin(a)*r;
+    ok=MPTS.every(p=>Math.hypot(p[0]-x,p[1]-z)>5)&&Math.hypot(x,z-22)>5&&colliders.m.every(c=>Math.hypot(c.x-x,c.z-z)>c.r+2);}
+  const s=.6+Math.random()*1.4,r=new THREE.Mesh(new THREE.DodecahedronGeometry(s,0),mat(0x7a2e1a,{flatShading:true}));
+  r.position.set(x,s*.5,z);r.rotation.set(Math.random()*3,Math.random()*3,0);GM.add(r);addCol("m",x,z,s*.9);}
+const DN=300,dustG=new THREE.BufferGeometry(),dustP=new Float32Array(DN*3);
+for(let i=0;i<DN;i++){dustP[i*3]=(Math.random()-.5)*80;dustP[i*3+1]=Math.random()*10;dustP[i*3+2]=(Math.random()-.5)*80;}
+dustG.setAttribute("position",new THREE.BufferAttribute(dustP,3));
+GM.add(new THREE.Points(dustG,new THREE.PointsMaterial({color:0xffc6a0,size:.15,transparent:true,opacity:.7})));
+
+/* hyper-anneaux */
+const rings=[];
+[[0,4,0],[-13,-3,1.2],[13,-11,-.9],[-2,-26,.4],[24,8,2]].forEach(([x,z,ry])=>{
+  const g=new THREE.Group();
+  const t=new THREE.Mesh(new THREE.TorusGeometry(2.2,.18,10,48),basic(0xff7ac8));g.add(t);
+  const t2=new THREE.Mesh(new THREE.TorusGeometry(2.6,.06,6,48),basic(0xc6a6ff));g.add(t2);
+  const f=new THREE.Mesh(new THREE.CircleGeometry(2.1,32),basic(0xff7ac8,{transparent:true,opacity:.12,side:THREE.DoubleSide,depthWrite:false}));g.add(f);
+  g.position.set(x,2.6,z);g.rotation.y=ry;GM.add(g);rings.push({g,cd:0});});
+
+/* ---------- Collectables ---------- */
+const ofudaTex=(()=>{const c=document.createElement("canvas");c.width=64;c.height=192;const x=c.getContext("2d");
+  x.fillStyle="#fbf3e2";x.fillRect(0,0,64,192);x.fillStyle="#d8364a";x.fillRect(0,0,64,14);x.fillRect(0,178,64,14);
+  x.strokeStyle="#d8364a";x.lineWidth=4;x.beginPath();x.arc(32,60,14,0,7);x.stroke();
+  x.beginPath();x.moveTo(32,84);x.lineTo(32,160);x.moveTo(18,110);x.lineTo(46,110);x.moveTo(20,135);x.lineTo(44,135);x.stroke();
+  return new THREE.CanvasTexture(c);})();
+const collect={k:[],m:[]};
+[[-8,14,1.3],[9,12,2.8],[-26,6,1.3],[25,2,1.3],[-4,-6,2.8],[16,-18,1.3],[-18,-16,1.3],[2,-28,2.8]].forEach(([x,z,y])=>{
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(.55,1.6),new THREE.MeshBasicMaterial({map:ofudaTex,side:THREE.DoubleSide}));
+  m.position.set(x,y,z);GK.add(m);collect.k.push({m,y,got:false});});
+[[-6,16,4.5],[8,20,1.4],[-30,0,1.4],[30,6,5],[-16,-14,3.5],[18,-15,1.4],[0,-18,6],[-28,-20,1.4]].forEach(([x,z,y])=>{
+  const g=new THREE.Group(),m=new THREE.Mesh(new THREE.OctahedronGeometry(.45,0),basic(0xffe08a));g.add(m);
+  const h=new THREE.Mesh(new THREE.OctahedronGeometry(.75,0),basic(0xffe08a,{transparent:true,opacity:.25}));g.add(h);
+  g.position.set(x,y,z);GM.add(g);collect.m.push({m:g,y,got:false});});
+
+/* ---------- Points de capture ---------- */
+const TAGCOL={kiriko:0xd8364a,juno:0xe85fb8,ow:0xf99e1a};
+function makePoint(group,x,z,q){
+  const col=TAGCOL[q.tag],g=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.6,.2,6),mat(0x1f2a40,{metalness:.4,roughness:.4}));base.position.y=.1;g.add(base);
+  const ringM=basic(col),ring=new THREE.Mesh(new THREE.RingGeometry(2.0,2.35,6),ringM);ring.rotation.x=-Math.PI/2;ring.position.y=.22;g.add(ring);
+  const fillM=basic(col,{transparent:true,opacity:.25}),fill=new THREE.Mesh(new THREE.CircleGeometry(2,6),fillM);fill.rotation.x=-Math.PI/2;fill.position.y=.21;fill.scale.setScalar(.01);g.add(fill);
+  const beamM=basic(col,{transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false}),beam=new THREE.Mesh(new THREE.CylinderGeometry(2,2,16,6,1,true),beamM);beam.position.y=8;g.add(beam);
+  const iconM=basic(col),icon=new THREE.Mesh(new THREE.OctahedronGeometry(.5,0),iconM);icon.position.y=3;g.add(icon);
+  g.position.set(x,0,z);group.add(g);
+  return {x,z,q,g,ringM,fill,fillM,beam,beamM,icon,iconM,done:false,ok:null};
+}
+let points={k:[],m:[]};
+function buildPoints(){
+  points.k.concat(points.m).forEach(p=>p.g.parent.remove(p.g));
+  const kq=shuffle(QUESTIONS.filter(q=>q.tag==="kiriko")), mq=shuffle(QUESTIONS.filter(q=>q.tag!=="kiriko"));
+  points.k=KPTS.map((p,i)=>makePoint(GK,p[0],p[1],kq[i]));
+  points.m=MPTS.map((p,i)=>makePoint(GM,p[0],p[1],mq[i]));
+}
+
+/* plateforme de lancement */
+const pad=new THREE.Group();
+{const b=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.8,.4,24),mat(0xe8edf5,{metalness:.5,roughness:.3}));b.position.y=.2;pad.add(b);
+ const r=new THREE.Mesh(new THREE.TorusGeometry(2.1,.15,8,40),basic(0xff7ac8));r.rotation.x=Math.PI/2;r.position.y=.45;pad.add(r);
+ const bm=new THREE.Mesh(new THREE.CylinderGeometry(1.8,2.1,30,24,1,true),basic(0xff7ac8,{transparent:true,opacity:.2,side:THREE.DoubleSide,depthWrite:false}));bm.position.y=15;pad.add(bm);
+ pad.position.set(0,0,-6.5);pad.visible=false;GK.add(pad);}
+
+/* ---------- Avatar ---------- */
+const PG=new THREE.Group();scene.add(PG);
+const white=mat(0xf2f4f8,{roughness:.35,metalness:.15}),dark=mat(0x2a3348,{roughness:.5}),visorM=new THREE.MeshStandardMaterial({color:0xf99e1a,emissive:0xf99e1a,emissiveIntensity:.9});
+const body=new THREE.Mesh(new THREE.CylinderGeometry(.42,.5,.9,16),white);body.position.y=1.0;PG.add(body);
+const hip=new THREE.Mesh(new THREE.SphereGeometry(.48,16,12),dark);hip.scale.y=.55;hip.position.y=.58;PG.add(hip);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.4,20,16),white);head.position.y=1.78;PG.add(head);
+const visor=new THREE.Mesh(new THREE.BoxGeometry(.6,.16,.18),visorM);visor.position.set(0,1.8,.31);PG.add(visor);
+const pack=new THREE.Mesh(new THREE.BoxGeometry(.55,.6,.25),dark);pack.position.set(0,1.05,-.48);PG.add(pack);
+const packL=new THREE.Mesh(new THREE.BoxGeometry(.1,.45,.05),visorM);packL.position.set(0,1.05,-.62);PG.add(packL);
+const antn=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.4,6),dark);antn.position.set(.18,2.25,0);PG.add(antn);
+const antb=new THREE.Mesh(new THREE.SphereGeometry(.08,8,8),visorM);antb.position.set(.18,2.47,0);PG.add(antb);
+const legs=[-1,1].map(s=>{const p=new THREE.Group();const l=new THREE.Mesh(new THREE.CylinderGeometry(.14,.12,.55,8),dark);l.position.y=-.27;p.add(l);
+  const f=new THREE.Mesh(new THREE.BoxGeometry(.24,.12,.36),white);f.position.set(0,-.55,.06);p.add(f);p.position.set(s*.2,.58,0);PG.add(p);return p;});
+const arms=[-1,1].map(s=>{const p=new THREE.Group();const a=new THREE.Mesh(new THREE.CylinderGeometry(.11,.1,.65,8),dark);a.position.y=-.32;p.add(a);
+  const h=new THREE.Mesh(new THREE.SphereGeometry(.13,8,8),white);h.position.y=-.68;p.add(h);p.position.set(s*.58,1.38,0);p.rotation.z=s*.12;PG.add(p);return p;});
+const shadow=new THREE.Mesh(new THREE.CircleGeometry(.7,24),basic(0x000000,{transparent:true,opacity:.35,depthWrite:false}));shadow.rotation.x=-Math.PI/2;scene.add(shadow);
+const arrow=new THREE.Group();{const c=new THREE.Mesh(new THREE.ConeGeometry(.28,.8,4),basic(0xf99e1a));c.rotation.x=Math.PI/2;arrow.add(c);}scene.add(arrow);
+PG.visible=false;shadow.visible=false;arrow.visible=false;
+
+/* ---------- Éclats ---------- */
+const bursts=[];
+function burstAt(pos,color,n=90,spd=.2){const g=new THREE.BufferGeometry(),p=new Float32Array(n*3),v=[];
+  for(let i=0;i<n;i++){p.set([pos.x,pos.y,pos.z],i*3);v.push(new THREE.Vector3(Math.random()-.5,Math.random()*.8,Math.random()-.5).normalize().multiplyScalar(spd*(.4+Math.random())));}
+  g.setAttribute("position",new THREE.BufferAttribute(p,3));
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({color,size:.25,transparent:true,depthWrite:false}));scene.add(pts);bursts.push({pts,v,life:1});}
+
+/* =========================================================
+   ÉTAT DU JEU
+   ========================================================= */
+const S={mode:"menu",paused:true,map:"k",time:0,results:[],capT:0,cur:null,boost:0,ofuda:0,stars:0,flying:false};
+const P={x:0,y:0,z:18,vx:0,vy:0,vz:0,ground:true,rot:Math.PI,walk:0};
+let yaw=0,pitch=.35;
+const keys={};let jumpQueued=false;
+const GRAV={k:26,m:9}, JUMP={k:9.5,m:9.5}, SPEED=8.5, BOUND={k:38,m:44};
+
+addEventListener("keydown",e=>{
+  if(S.mode!=="play"||S.paused)return;
+  keys[e.code]=true;
+  if(e.code==="Space"){jumpQueued=true;e.preventDefault()}
+  if(e.code.startsWith("Arrow"))e.preventDefault();
+});
+addEventListener("keyup",e=>{keys[e.code]=false});
+addEventListener("blur",()=>{for(const k in keys)keys[k]=false});
+
+/* souris / tactile */
+const cv=$("scene");let camDrag=null,joyId=null,joyO={x:0,y:0};const joy={x:0,y:0};
+cv.addEventListener("pointerdown",e=>{
+  if(S.mode!=="play")return;
+  if(e.pointerType==="touch"&&e.clientX<innerWidth*.45&&joyId===null){
+    joyId=e.pointerId;joyO={x:e.clientX,y:e.clientY};const j=$("joy");j.style.left=e.clientX+"px";j.style.top=e.clientY+"px";j.classList.remove("hidden");
+  } else if(camDrag===null){camDrag={id:e.pointerId,x:e.clientX,y:e.clientY};}
+  try{cv.setPointerCapture(e.pointerId)}catch(_){}
+});
+cv.addEventListener("pointermove",e=>{
+  if(e.pointerId===joyId){let dx=e.clientX-joyO.x,dy=e.clientY-joyO.y;const d=Math.hypot(dx,dy),m=50;if(d>m){dx*=m/d;dy*=m/d}
+    joy.x=dx/m;joy.y=dy/m;$("joyKnob").style.transform=`translate(${dx}px,${dy}px)`;}
+  else if(camDrag&&e.pointerId===camDrag.id){const s=e.pointerType==="touch"?.008:.005;
+    yaw-=(e.clientX-camDrag.x)*s;pitch=Math.max(.05,Math.min(1.15,pitch+(e.clientY-camDrag.y)*s*.8));camDrag.x=e.clientX;camDrag.y=e.clientY;}
+});
+const endPtr=e=>{if(e.pointerId===joyId){joyId=null;joy.x=joy.y=0;$("joy").classList.add("hidden");$("joyKnob").style.transform=""}
+  if(camDrag&&e.pointerId===camDrag.id)camDrag=null;};
+cv.addEventListener("pointerup",endPtr);cv.addEventListener("pointercancel",endPtr);
+$("jumpBtn").addEventListener("pointerdown",e=>{e.preventDefault();if(S.mode==="play"&&!S.paused)jumpQueued=true});
+
+/* ---------- HUD ---------- */
+function updateHUD(){
+  const pts=points[S.map],done=pts.filter(p=>p.done).length;
+  $("hudMap").textContent=S.map==="k"?"Carte 1 · Kanezaka":"Carte 2 · Mars";
+  $("hudObj").textContent=done<6?`Capture les points ${done}/6`:(S.map==="k"?"Rejoins la plateforme de lancement":"Mission accomplie");
+  $("hudPips").innerHTML=pts.map(p=>`<i class="${p.done?(p.ok?"ok":"ko"):""}"></i>`).join("");
+  $("hudColLbl").textContent=S.map==="k"?"📜 Ofuda":"✦ Éclats";
+  $("hudCol").textContent=S.map==="k"?`${S.ofuda}/8`:`${S.stars}/8`;
+  $("hudScore").textContent=S.results.filter(r=>r.ok).length;
+}
+
+/* ---------- Questions ---------- */
+function openQuestion(pt){
+  S.paused=true;S.cur=pt;$("capRing").classList.add("hidden");
+  for(const k in keys)keys[k]=false;
+  const Q=pt.q,tag=$("qTag");tag.className="badge "+Q.tag;
+  tag.firstElementChild.textContent=Q.tag==="kiriko"?"Kiriko":Q.tag==="juno"?"Juno":"Bonus";
+  $("qCount").innerHTML=`Point <b>${S.results.length+1}</b> / 12`;
+  $("qText").textContent=Q.q;
+  const box=$("qChoices");box.innerHTML="";
+  shuffle(Q.a.map((t,i)=>({t,i}))).forEach((o,n)=>{const b=document.createElement("button");b.className="choice";
+    b.innerHTML=`<span class="k">${"ABCD"[n]}</span>`;b.appendChild(document.createTextNode(o.t));b.dataset.good=o.i===Q.c?"1":"";
+    b.onclick=()=>answer(b,o.i===Q.c);box.appendChild(b);});
+  $("qFeedback").classList.add("hidden");$("qNextRow").classList.add("hidden");
+  showPanel("quiz");
+}
+function answer(btn,ok){
+  const pt=S.cur,Q=pt.q;
+  [...$("qChoices").children].forEach(b=>{b.disabled=true;if(b.dataset.good)b.classList.add("good")});
+  if(!ok)btn.classList.add("bad");
+  S.results.push({tag:Q.tag,ok});pt.done=true;pt.ok=ok;
+  const c=ok?0x38d39f:0xff4655;pt.ringM.color.setHex(c);pt.iconM.color.setHex(c);pt.fillM.color.setHex(c);pt.fill.scale.setScalar(1);pt.beam.visible=false;
+  burstAt(new THREE.Vector3(pt.x,1.5,pt.z),ok?0x38d39f:0xff4655,120,.25);
+  const yes=["Point capturé !","Bien joué !","Exactement !","Imparable !",G("Comme une pro !","Comme un pro !")],no=["Raté de peu !","Pas tout à fait…","Presque !","Oups !"];
+  const fb=$("qFeedback");fb.className="feedback "+(ok?"okb":"ko");
+  fb.innerHTML=`<b>${ok?yes[Math.floor(Math.random()*yes.length)]:no[Math.floor(Math.random()*no.length)]}</b>${Q.e}`;
+  $("qNextRow").classList.remove("hidden");updateHUD();
+}
+$("qNext").onclick=()=>{
+  hidePanels();if(document.activeElement)document.activeElement.blur();
+  S.cur=null;S.capT=0;
+  const pts=points[S.map];
+  if(pts.every(p=>p.done)){
+    if(S.map==="k"){pad.visible=true;toast("Kanezaka sécurisée ! Direction la plateforme 🚀","#ff9ad6")}
+    else return endGame();
+  }
+  S.paused=false;updateHUD();
+};
+
+/* ---------- Transitions ---------- */
+function goMars(){
+  S.paused=true;S.flying=true;$("flash").classList.add("on");
+  setTimeout(()=>{
+    GK.visible=false;GM.visible=true;S.map="m";skyTarget=1;
+    P.x=0;P.z=24;P.y=0;P.vx=P.vy=P.vz=0;yaw=0;pitch=.35;P.rot=Math.PI;
+    camera.position.set(0,6,34);
+    $("flash").classList.remove("on");S.flying=false;S.paused=false;updateHUD();
+    banner("Mars","#ff7ac8");setTimeout(()=>toast("Gravité réduite : saute pour voir ! Traverse les anneaux roses ⚡","#ffd0ea"),1200);
+  },700);
+}
+function resetWorld(){
+  buildPoints();pad.visible=false;
+  collect.k.concat(collect.m).forEach(c=>{c.got=false;c.m.visible=true});
+  GK.visible=true;GM.visible=false;S.map="k";skyTarget=0;skyU.k.value=0;
+  Object.assign(S,{time:0,results:[],capT:0,cur:null,boost:0,ofuda:0,stars:0});
+  Object.assign(P,{x:0,y:0,z:20,vx:0,vy:0,vz:0,ground:true,rot:Math.PI});yaw=0;pitch=.35;
+}
+function startGame(){
+  resetWorld();hidePanels();S.mode="play";S.paused=false;
+  PG.visible=shadow.visible=arrow.visible=true;
+  $("hud").classList.remove("hidden");$("jumpBtn").classList.toggle("hidden",!isTouch);
+  const h=$("help");h.classList.toggle("hidden",isTouch);h.style.opacity=1;setTimeout(()=>h.style.opacity=0,12000);
+  camera.position.set(0,6,30);updateHUD();banner("Kanezaka");
+  setTimeout(()=>toast("Capture les 6 points hexagonaux !"),1300);
+}
+function endGame(){
+  S.mode="end";S.paused=true;$("hud").classList.add("hidden");
+  for(let i=0;i<6;i++)setTimeout(()=>burstAt(new THREE.Vector3(P.x+(Math.random()-.5)*6,2+Math.random()*3,P.z+(Math.random()-.5)*6),[0xf99e1a,0x3fa9ff,0xff7ac8,0xffe08a][i%4],120,.3),i*250);
+  const score=S.results.filter(r=>r.ok).length;
+  banner(player.special?"Légendaire !":(score>=6?"Victoire !":"Mission terminée"),player.special?"#ff7ac8":"var(--or)");
+  renderDiploma().then(()=>setTimeout(()=>{showPanel("diploma");$("pdfHint").textContent=""},1500));
+}
+
+/* ---------- Boucle ---------- */
+const clock=new THREE.Clock(),tmp=new THREE.Vector3(),camT=new THREE.Vector3();
+function angLerp(a,b,t){let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*t}
+function step(dt,t){
+  const map=S.map;
+  // déplacement
+  let f=((keys.KeyW||keys.ArrowUp)?1:0)-((keys.KeyS||keys.ArrowDown)?1:0)-joy.y;
+  let r=((keys.KeyD||keys.ArrowRight)?1:0)-((keys.KeyA||keys.ArrowLeft)?1:0)+joy.x;
+  const fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);
+  let mx=fx*f+rx*r,mz=fz*f+rz*r;const len=Math.hypot(mx,mz);if(len>1){mx/=len;mz/=len}
+  S.boost=Math.max(0,S.boost-dt);
+  const spd=SPEED*(S.boost>0?1.9:1)*(map==="m"?1.05:1);
+  const acc=P.ground?12:4;
+  P.vx+=(mx*spd-P.vx)*Math.min(1,dt*acc);P.vz+=(mz*spd-P.vz)*Math.min(1,dt*acc);
+  P.x+=P.vx*dt;P.z+=P.vz*dt;
+  if(jumpQueued&&P.ground){P.vy=JUMP[map];P.ground=false;burstAt(new THREE.Vector3(P.x,.1,P.z),map==="k"?0xffd0e0:0xffc6a0,20,.08)}
+  jumpQueued=false;
+  P.vy-=GRAV[map]*dt;P.y+=P.vy*dt;if(P.y<=0){P.y=0;P.vy=0;P.ground=true}
+  for(const c of colliders[map]){const dx=P.x-c.x,dz=P.z-c.z,d=Math.hypot(dx,dz),m=c.r+.5;if(d<m&&d>1e-4){P.x=c.x+dx/d*m;P.z=c.z+dz/d*m}}
+  const d0=Math.hypot(P.x,P.z),B=BOUND[map];if(d0>B){P.x*=B/d0;P.z*=B/d0}
+  const moving=Math.hypot(P.vx,P.vz);
+  if(len>.1)P.rot=angLerp(P.rot,Math.atan2(mx,mz),Math.min(1,dt*12));
+  P.walk+=moving*dt*1.6;
+  PG.position.set(P.x,P.y,P.z);PG.rotation.y=P.rot;
+  const sw=Math.sin(P.walk*2)*Math.min(1,moving/6)*(P.ground?.7:.2);
+  legs[0].rotation.x=sw;legs[1].rotation.x=-sw;arms[0].rotation.x=-sw;arms[1].rotation.x=sw;
+  body.position.y=1+Math.abs(Math.sin(P.walk*2))*.05*Math.min(1,moving/6);
+  shadow.position.set(P.x,.03,P.z);shadow.scale.setScalar(Math.max(.4,1-P.y*.12));
+  visorM.emissiveIntensity=S.boost>0?2:.9;
+
+  // collectables
+  for(const c of collect[map]){if(c.got)continue;
+    if(Math.hypot(c.m.position.x-P.x,c.m.position.z-P.z)<1.3&&Math.abs(P.y+1-c.y)<1.4){
+      c.got=true;c.m.visible=false;burstAt(c.m.position,map==="k"?0xfbf3e2:0xffe08a,50,.15);
+      if(map==="k"){S.ofuda++;toast(`+1 Ofuda (${S.ofuda}/8)`,"#ffe9c8")}else{S.stars++;toast(`+1 Éclat d'étoile (${S.stars}/8)`,"#ffe08a")}
+      updateHUD();}}
+  // anneaux
+  if(map==="m")for(const R of rings){R.cd=Math.max(0,R.cd-dt);
+    const wp=R.g.position;if(R.cd===0&&Math.hypot(wp.x-P.x,wp.y-(P.y+1),wp.z-P.z)<2.1){R.cd=1.5;S.boost=3;toast("⚡ Hyper-anneau ! Vitesse augmentée","#ff9ad6");burstAt(wp,0xff7ac8,80,.25)}}
+  // plateforme
+  if(map==="k"&&pad.visible&&Math.hypot(P.x-pad.position.x,P.z-pad.position.z)<2.3&&!S.flying){goMars();return}
+  // capture
+  let near=null;for(const p of points[map]){if(!p.done&&Math.hypot(p.x-P.x,p.z-P.z)<2.4&&P.y<1){near=p;break}}
+  if(near){S.capT+=dt;near.fill.scale.setScalar(Math.max(.01,S.capT/1.2));$("capRing").classList.remove("hidden");
+    $("capArc").style.strokeDashoffset=314*(1-Math.min(1,S.capT/1.2));
+    if(S.capT>=1.2){S.capT=0;openQuestion(near)}}
+  else{if(S.capT>0)points[map].forEach(p=>{if(!p.done)p.fill.scale.setScalar(.01)});S.capT=0;$("capRing").classList.add("hidden")}
+  // flèche vers l'objectif
+  let tgt=null,best=1e9;
+  if(map==="k"&&pad.visible)tgt=pad.position;
+  else for(const p of points[map])if(!p.done){const d=Math.hypot(p.x-P.x,p.z-P.z);if(d<best){best=d;tgt=p.g.position}}
+  if(tgt){arrow.visible=true;arrow.position.set(P.x,P.y+2.9+Math.sin(t*4)*.08,P.z);arrow.rotation.y=Math.atan2(tgt.x-P.x,tgt.z-P.z)}else arrow.visible=false;
+
+  S.time+=dt;$("hudTime").textContent=fmtTime(S.time);
+}
+(function loop(){
+  const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
+  skyU.k.value+=(skyTarget-skyU.k.value)*Math.min(1,dt*2);const k=skyU.k.value;
+  starMat.opacity=k*.9;scene.fog.color.copy(FOG_K).lerp(FOG_M,k);
+  // décor animé
+  const pa=petG.attributes.position;for(let i=0;i<PN;i++){let y=pa.getY(i)-dt*.9,x=pa.getX(i)+Math.sin(t+i)*dt*.6;if(y<0){y=16;x=(Math.random()-.5)*70}pa.setY(i,y);pa.setX(i,x)}pa.needsUpdate=true;
+  const da=dustG.attributes.position;for(let i=0;i<DN;i++){let x=da.getX(i)+dt*1.2;if(x>40)x=-40;da.setX(i,x)}da.needsUpdate=true;
+  collect.k.forEach((c,i)=>{c.m.rotation.y=t*2+i;c.m.position.y=c.y+Math.sin(t*2+i)*.15});
+  collect.m.forEach((c,i)=>{c.m.rotation.y=t*2+i;c.m.rotation.x=t;c.m.position.y=c.y+Math.sin(t*2+i)*.2});
+  points.k.concat(points.m).forEach((p,i)=>{p.icon.rotation.y=t*1.5+i;p.icon.position.y=3+Math.sin(t*2+i)*.2;p.beamM.opacity=.12+Math.sin(t*3+i)*.05});
+  rings.forEach((R,i)=>{R.g.children[0].rotation.z=t*1.2+i;R.g.children[1].rotation.z=-t*.8});
+  pad.children[1].scale.setScalar(1+Math.sin(t*5)*.06);
+
+  if(S.mode==="play"&&!S.paused)step(dt,t);
+
+  if(S.mode==="play"||S.mode==="end"){
+    if(S.mode==="end")yaw+=dt*.25;
+    camT.set(P.x,P.y+1.5,P.z);const D=S.mode==="end"?9:7.5;
+    tmp.set(camT.x+Math.sin(yaw)*Math.cos(pitch)*D,camT.y+Math.sin(pitch)*D+.4,camT.z+Math.cos(yaw)*Math.cos(pitch)*D);
+    if(tmp.y<.5)tmp.y=.5;
+    camera.position.lerp(tmp,1-Math.exp(-dt*10));camera.lookAt(camT);
+  } else {
+    camera.position.set(Math.sin(t*.08)*30,11,Math.cos(t*.08)*30);camera.lookAt(0,3,-4);
+  }
+  for(let i=bursts.length-1;i>=0;i--){const b=bursts[i];b.life-=dt*.9;const a=b.pts.geometry.attributes.position;
+    for(let j=0;j<b.v.length;j++){b.v[j].y-=dt*.25;a.setXYZ(j,a.getX(j)+b.v[j].x,a.getY(j)+b.v[j].y,a.getZ(j)+b.v[j].z)}
+    a.needsUpdate=true;b.pts.material.opacity=Math.max(0,b.life);if(b.life<=0){scene.remove(b.pts);b.pts.geometry.dispose();bursts.splice(i,1)}}
+  renderer.render(scene,camera);requestAnimationFrame(loop);
+})();
+
+/* =========================================================
+   ÉCRANS
+   ========================================================= */
+function checkProfile(){$("profileBtn").disabled=!($("nameIn").value.trim()&&player.g)}
+$("nameIn").addEventListener("input",checkProfile);
+$("nameIn").addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("profileBtn").disabled)$("profileBtn").click()});
+[...$("genderSeg").children].forEach(b=>b.onclick=()=>{player.g=b.dataset.g;[...$("genderSeg").children].forEach(x=>x.classList.toggle("on",x===b));checkProfile()});
+$("ctrlDesk").classList.toggle("hidden",isTouch);$("ctrlTouch").classList.toggle("hidden",!isTouch);
+$("profileBtn").onclick=()=>{
+  player.name=$("nameIn").value.trim();player.special=norm(player.name)===SPECIAL_NAME;
+  if(player.special){
+    $("introEyebrow").textContent="🎁 Mission spéciale · Secret Santa";
+    $("introTitle").textContent="Joyeux Noël, "+player.name+" !";
+    $("introText").innerHTML="Ton Secret Santa t'a préparé une mission rien que pour toi : sécurise le <b>sanctuaire de Kanezaka</b>, puis décolle vers <b>Mars</b> sur les traces de tes deux héroïnes préférées. Une récompense <b>légendaire</b> t'attend au bout… 🦊🪐";
+  } else {
+    $("introEyebrow").textContent="Briefing de mission";
+    $("introTitle").textContent=G("Bienvenue, agente ","Bienvenue, agent ")+player.name;
+    $("introText").innerHTML=`Sécurise <b>Kanezaka</b> puis <b>Mars</b> en capturant 6 points sur chaque carte. Réponds juste pour décrocher le meilleur rang. Prêt${G("e","")} ?`;
+  }
+  showPanel("intro");
+};
+$("backBtn").onclick=()=>showPanel("profile");
+$("startBtn").onclick=startGame;
+$("retryBtn").onclick=startGame;
+$("nextPlayerBtn").onclick=()=>{$("nameIn").value="";player.g="";[...$("genderSeg").children].forEach(x=>x.classList.remove("on"));checkProfile();
+  S.mode="menu";PG.visible=shadow.visible=arrow.visible=false;resetWorld();showPanel("profile");};
+resetWorld();
+
+/* =========================================================
+   DIPLÔME (dessiné sur canvas, exporté en PDF)
+   ========================================================= */
+const EMBLEM_FOX=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#fff" stroke="#d8364a" stroke-width="4"/><path d="M24 26 L38 46 L50 40 L62 46 L76 26 L74 54 L50 80 L26 54 Z" fill="#f4f0ea" stroke="#d8364a" stroke-width="3" stroke-linejoin="round"/><path d="M28 32 L36 46 L31 50 Z M72 32 L64 46 L69 50 Z" fill="#d8364a"/><path d="M38 56 Q44 52 46 58 M62 56 Q56 52 54 58" stroke="#d8364a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M46 70 L50 74 L54 70" stroke="#2a1640" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M50 46 L50 60" stroke="#f99e1a" stroke-width="3" stroke-linecap="round"/></svg>`;
+const EMBLEM_PLANET=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#fff" stroke="#e85fb8" stroke-width="4"/><path d="M12 62 A40 11 -18 0 1 86 38" fill="none" stroke="#e85fb8" stroke-width="4"/><circle cx="50" cy="50" r="22" fill="#d2552e"/><path d="M33 44 Q45 40 56 46 T68 44" stroke="#a8381c" stroke-width="3" fill="none"/><circle cx="44" cy="56" r="3" fill="#a8381c"/><circle cx="58" cy="54" r="2" fill="#a8381c"/><path d="M14 61 A40 11 -18 0 0 86 39" fill="none" stroke="#e85fb8" stroke-width="4"/></svg>`;
+const loadImg=svg=>new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)});
+const emblems=Promise.all([loadImg(EMBLEM_FOX),loadImg(EMBLEM_PLANET)]);
+const fontsReady=Promise.all(['700 100px Teko','600 40px Teko','600 40px Rajdhani','700 40px Rajdhani','400 60px "Great Vibes"'].map(f=>document.fonts.load(f).catch(()=>{}))).catch(()=>{});
+
+function rankFor(s,n){
+  if(s===n)return["Légende des supports",`Score parfait ! Ni Kanezaka ni Mars n'ont de secrets pour toi. Tu es officiellement ${G("diplômée","diplômé")} avec les honneurs.`];
+  if(s>=n-3)return[G("Gardienne du sanctuaire","Gardien du sanctuaire"),`Tes ofuda trouvent toujours leur cible et tes anneaux tombent toujours au bon moment. Tu es ${G("certifiée","certifié")} avec mention.`];
+  if(s>=n/2)return[G("Cadette de la mission Red Promise","Cadet de la mission Red Promise"),"Mission réussie ! Encore quelques heures de jeu et tu décroches les étoiles."];
+  return[G("Apprentie des ofuda","Apprenti des ofuda"),"Tous les grands supports ont commencé quelque part. L'Académie t'accueille quand même avec tous les honneurs (et un Suzu pour la route)."];
+}
+function wrap(c,text,maxW){const words=text.split(" "),lines=[];let line="";
+  for(const w of words){const test=line?line+" "+w:w;if(c.measureText(test).width>maxW&&line){lines.push(line);line=w}else line=test}
+  if(line)lines.push(line);return lines;}
+let NO_EMB=false;
+function spacing(c,v){try{c.letterSpacing=v}catch(e){}}
+
+async function renderDiploma(){
+  await fontsReady;const [fox,planet]=await emblems;
+  const cvd=$("dipCv"),c=cvd.getContext("2d"),W=2000,H=1414,sp=player.special,n=QUESTIONS.length;
+  const score=S.results.filter(r=>r.ok).length;
+  const kOk=S.results.filter(r=>r.ok&&r.tag==="kiriko").length,jOk=S.results.filter(r=>r.ok&&r.tag==="juno").length;
+  const [rank,rtext]=rankFor(score,n);
+  c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,W,H);spacing(c,"0px");
+  c.fillStyle=sp?"#2a1430":"#141c2b";c.fillRect(0,0,W,H);
+  const poly=(m,cut)=>{c.beginPath();c.moveTo(m+cut,m);c.lineTo(W-m,m);c.lineTo(W-m,H-m-cut);c.lineTo(W-m-cut,H-m);c.lineTo(m,H-m);c.lineTo(m,m+cut);c.closePath()};
+  const M=36;poly(M,70);
+  const bg=c.createLinearGradient(0,0,W,H);
+  if(sp){bg.addColorStop(0,"#fffaf2");bg.addColorStop(.6,"#fdf0e6");bg.addColorStop(1,"#f6e3e9")}else{bg.addColorStop(0,"#ffffff");bg.addColorStop(.6,"#eef2f7");bg.addColorStop(1,"#e2e8f1")}
+  c.fillStyle=bg;c.fill();
+  c.save();poly(M,70);c.clip();
+  if(sp)[[W*.12,H*.1,"rgba(255,120,140,.25)"],[W*.88,H*.12,"rgba(232,95,184,.25)"],[W*.5,H,"rgba(249,158,26,.22)"]].forEach(([x,y,col])=>{
+    const r=c.createRadialGradient(x,y,0,x,y,W*.45);r.addColorStop(0,col);r.addColorStop(1,"rgba(255,255,255,0)");c.fillStyle=r;c.fillRect(0,0,W,H)});
+  const sg=c.createLinearGradient(0,0,W,0);
+  if(sp)["#d8364a","#f99e1a","#ffe08a","#e85fb8","#9b6bff"].forEach((col,i,a)=>sg.addColorStop(i/(a.length-1),col));
+  else{sg.addColorStop(0,"#f99e1a");sg.addColorStop(.5,"#ffcf7a");sg.addColorStop(1,"#f99e1a")}
+  c.fillStyle=sg;c.fillRect(0,M,W,22);
+  // hexagones décoratifs discrets
+  c.strokeStyle=sp?"rgba(216,54,74,.08)":"rgba(20,28,43,.06)";c.lineWidth=3;
+  for(let i=0;i<14;i++){const x=(i*173)%W,y=200+((i*389)%1000),r=40+(i%4)*25;c.beginPath();for(let k=0;k<6;k++){const a=k/6*Math.PI*2;c[k?"lineTo":"moveTo"](x+r*Math.cos(a),y+r*Math.sin(a))}c.closePath();c.stroke()}
+  c.restore();
+  poly(M+34,50);c.lineWidth=sp?8:5;c.strokeStyle=sp?sg:"#f99e1a";c.stroke();
+
+  c.textAlign="center";c.textBaseline="alphabetic";const cx=W/2;
+  const skewText=(txt,x,y)=>{c.save();c.translate(x,y);c.transform(1,0,-.18,1,0,0);c.fillText(txt,0,0);c.restore()};
+  const skewRect=(x,y,w,h)=>{const s=h*.25;c.beginPath();c.moveTo(x+s,y);c.lineTo(x+w+s,y);c.lineTo(x+w-s,y+h);c.lineTo(x-s,y+h);c.closePath();c.fill()};
+  let y;
+  if(sp){
+    c.font="600 40px Teko";spacing(c,"6px");const t="✦ ÉDITION LÉGENDAIRE ✦",w=c.measureText(t).width+60;
+    c.fillStyle="#f99e1a";skewRect(cx-w/2,108,w,52);c.fillStyle="#141c2b";c.fillText(t,cx,146);
+    if(fox&&!NO_EMB)c.drawImage(fox,120,110,200,200);if(planet&&!NO_EMB)c.drawImage(planet,W-320,110,200,200);
+    y=212;
+  } else y=172;
+  c.font="600 44px Teko";spacing(c,"8px");c.fillStyle=sp?"#b8202f":"#8a5a10";
+  c.fillText(sp?"SECRET SANTA 2026 · KANEZAKA × RED PROMISE":"ACADÉMIE DES SUPPORTS",cx,y);
+  spacing(c,"2px");
+  const tSize=sp?140:150;c.font=`700 ${tSize}px Teko`;y+=sp?125:132;
+  const title=sp?"DIPLÔME LÉGENDAIRE":"DIPLÔME OFFICIEL",tw=c.measureText(title).width;
+  if(sp){const tg=c.createLinearGradient(cx-tw/2,0,cx+tw/2,0);tg.addColorStop(0,"#b8202f");tg.addColorStop(.45,"#f99e1a");tg.addColorStop(.75,"#e85fb8");tg.addColorStop(1,"#7d4bff");c.fillStyle=tg}else c.fillStyle="#141c2b";
+  skewText(title,cx,y);
+  spacing(c,"1px");c.font="600 40px Rajdhani";c.fillStyle="#5a6478";y+=58;
+  c.fillText(sp?"est fièrement décerné à notre héroïne":"est décerné à",cx,y);
+  spacing(c,"0px");
+  if(sp){let s=200;c.font=`400 ${s}px "Great Vibes"`;while(c.measureText(player.name).width>1300&&s>90){s-=10;c.font=`400 ${s}px "Great Vibes"`}c.fillStyle="#2a1640";y+=165;c.fillText(player.name,cx,y)}
+  else{let s=180;c.font=`700 ${s}px Teko`;const nm=player.name.toUpperCase();while(c.measureText(nm).width>1400&&s>80){s-=10;c.font=`700 ${s}px Teko`}c.fillStyle="#141c2b";y+=170;c.fillText(nm,cx,y)}
+  // rang
+  y+=34;c.font="600 56px Teko";spacing(c,"3px");
+  const rk=sp?"MAIN KIRIKO & JUNO · CERTIFIÉE LÉGENDAIRE":rank.toUpperCase(),rw=c.measureText(rk).width+90;
+  if(sp){const rg=c.createLinearGradient(cx-rw/2,0,cx+rw/2,0);rg.addColorStop(0,"#b8202f");rg.addColorStop(.45,"#e0384a");rg.addColorStop(.6,"#e85fb8");rg.addColorStop(1,"#7d4bff");c.fillStyle=rg}else c.fillStyle="#141c2b";
+  skewRect(cx-rw/2,y,rw,74);c.fillStyle=sp?"#ffffff":"#f99e1a";c.fillText(rk,cx,y+58);y+=74;
+  // texte
+  spacing(c,"0px");c.font=`600 ${sp?34:36}px Rajdhani`;c.fillStyle="#2b3446";
+  const body=sp?`Mission « De Kanezaka jusqu'à Mars » accomplie avec ${score}/${n}. Rang obtenu : ${rank}.`
+               :`Pour avoir mené la mission « De Kanezaka jusqu'à Mars » avec ${score} bonne${score>1?"s":""} réponse${score>1?"s":""} sur ${n}. ${rtext}`;
+  const lines=wrap(c,body,sp?1500:1400),lh=sp?46:48;y+=sp?62:66;
+  lines.forEach((l,i)=>c.fillText(l,cx,y+i*lh));y+=(lines.length-1)*lh;
+  // stats
+  y+=36;const stats=[[`${score}/${n}`,"SCORE"],[`${kOk}/6`,"KIRIKO"],[`${jOk}/5`,"JUNO"],[fmtTime(S.time),"TEMPS"],[`${S.ofuda+S.stars}/16`,"BONUS"]];
+  const bw=230,bh=sp?96:104,gap=26,tot=stats.length*bw+(stats.length-1)*gap;let bx=cx-tot/2;
+  stats.forEach(([v,l])=>{c.fillStyle="#141c2b";skewRect(bx,y,bw,bh);c.fillStyle="#f99e1a";c.font=`700 ${sp?62:68}px Teko`;spacing(c,"0px");c.fillText(v,bx+bw/2,y+(sp?60:64));
+    c.fillStyle="#9fb0c8";c.font="700 20px Rajdhani";spacing(c,"4px");c.fillText(l,bx+bw/2,y+bh-14);bx+=bw+gap});
+  y+=bh;
+  if(sp){spacing(c,"0px");c.font='400 52px "Great Vibes"';c.fillStyle="#6e1a3a";const ml=wrap(c,SPECIAL_MESSAGE,1450);y+=70;ml.slice(0,2).forEach((l,i)=>c.fillText(l,cx,y+i*58))}
+  // pied
+  const fy=H-200;
+  [[W*.25,"Sanctuaire de Kanezaka","MAÎTRISE DES OFUDA"],[W*.75,"Mission Red Promise","CONTRÔLE ORBITAL · MARS"]].forEach(([x,s,l])=>{
+    spacing(c,"0px");c.font='400 54px "Great Vibes"';c.fillStyle="#141c2b";c.fillText(s,x,fy);
+    c.strokeStyle="#9aa6b8";c.lineWidth=2;c.beginPath();c.moveTo(x-220,fy+18);c.lineTo(x+220,fy+18);c.stroke();
+    c.font="700 22px Rajdhani";spacing(c,"4px");c.fillStyle="#6a7488";c.fillText(l,x,fy+52)});
+  const sx=cx,sy=H-212;c.beginPath();for(let i=0;i<48;i++){const a=i/48*Math.PI*2,r=i%2?78:90;c[i?"lineTo":"moveTo"](sx+r*Math.cos(a),sy+r*Math.sin(a))}c.closePath();c.fillStyle=sp?sg:"#f99e1a";c.fill();
+  c.beginPath();c.arc(sx,sy,70,0,Math.PI*2);c.fillStyle="#141c2b";c.fill();
+  c.setLineDash([6,6]);c.strokeStyle="#f99e1a";c.lineWidth=3;c.beginPath();c.arc(sx,sy,58,0,Math.PI*2);c.stroke();c.setLineDash([]);
+  spacing(c,"0px");c.font="700 56px Teko";c.fillStyle="#f99e1a";c.fillText(`${score}/${n}`,sx,sy+12);
+  c.font="600 22px Teko";spacing(c,"3px");c.fillStyle="#fff";c.fillText(sp?"LÉGENDAIRE":G("CERTIFIÉE","CERTIFIÉ"),sx,sy+40);
+  spacing(c,"1px");c.font="600 28px Rajdhani";c.fillStyle="#6a7488";
+  c.fillText("Remis le "+new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}),cx,H-92);
+  spacing(c,"0px");
+}
+
+$("pdfBtn").onclick=async()=>{
+  const hint=$("pdfHint"),btn=$("pdfBtn");
+  try{
+    btn.disabled=true;hint.textContent="Préparation du PDF…";
+    const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+    let url;try{url=$("dipCv").toDataURL("image/jpeg",.93)}catch(_){NO_EMB=true;await renderDiploma();url=$("dipCv").toDataURL("image/jpeg",.93)}
+    doc.addImage(url,"JPEG",0,0,297,210);
+    doc.setProperties({title:"Diplôme — "+player.name});
+    const blob=doc.output("blob"),fname=`diplome-${norm(player.name).replace(/[^a-z0-9]+/g,"-")||"agent"}.pdf`;
+    if(!dlChecked)await new Promise(r=>setTimeout(r,800));
+    if(DL){await DL.save({filename:fname,data:blob});hint.textContent="PDF prêt ✓";}
+    else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();a.remove();
+      hint.textContent="Si rien ne se télécharge, fais une capture d'écran du diplôme 📸";}
+  }catch(e){
+    hint.textContent=e&&e.code==="declined"?"Téléchargement annulé.":"Export impossible ici. Fais une capture d'écran du diplôme 📸";
+  }finally{btn.disabled=false}
+};
+</script>
+</body>
+</html>

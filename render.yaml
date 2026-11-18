@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: secret-santa-nozomi
+    runtime: static
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
