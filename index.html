@@ -335,7 +335,7 @@ if(!isTouch&&THREE.EffectComposer&&THREE.RenderPass&&THREE.UnrealBloomPass&&THRE
     const rt=new THREE.WebGLRenderTarget(innerWidth,innerHeight,{type:THREE.HalfFloatType,format:THREE.RGBAFormat});
     composer=new THREE.EffectComposer(renderer,rt);composer.setPixelRatio(renderer.getPixelRatio());composer.setSize(innerWidth,innerHeight);
     composer.addPass(new THREE.RenderPass(scene,camera));
-    composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.6,.5,.95));
+    composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.55,.5,1.15));
     composer.addPass(new THREE.ShaderPass(GRADE));
     renderer.toneMapping=THREE.NoToneMapping;renderer.outputEncoding=THREE.LinearEncoding;
     addEventListener("resize",()=>composer.setSize(innerWidth,innerHeight));
@@ -655,7 +655,7 @@ function buildPoints(){
   points.m=MPTS.map((p,i)=>makePoint(GM,p[0],p[1],mq[i],i));
 }
 const TOTAL=KPTS.length+MPTS.length;
-const SUN_A=C(0xffc6b4),HEMI_A=C(0xb9c8ff),GRD_A=C(0xdfe6f8),FOG_A=C(0xbcc4e8),SUN_K=C(0xfff0d8),SUN_M=C(0xffc493),HEMI_K=C(0xcfe6ff),HEMI_M=C(0xffc9a8),GRD_K=C(0x8a7058),GRD_M=C(0x8a4a30);
+const SUN_A=C(0xffb8a0),HEMI_A=C(0x8fa3e0),GRD_A=C(0x9aa6c8),FOG_A=C(0x7d88b8),SUN_K=C(0xfff0d8),SUN_M=C(0xffc493),HEMI_K=C(0xcfe6ff),HEMI_M=C(0xffc9a8),GRD_K=C(0x8a7058),GRD_M=C(0x8a4a30);
 
 /* plateforme de lancement */
 const pad=new THREE.Group();
@@ -976,9 +976,9 @@ const sfx={
 const GA=new THREE.Group();scene.add(GA);GA.visible=false;
 colliders.a=[];points.a=[];collect.a=[];
 const ARENA_R=25;
-const snowM=new THREE.MeshStandardMaterial({color:C(0xffffff),map:noiseTex("#f4f8ff",["#dfe9f8","#ffffff","#cfdcf0"],900,256,30),roughness:.85});
+const snowM=new THREE.MeshStandardMaterial({color:C(0xc9d3e6),map:noiseTex("#f4f8ff",["#dfe9f8","#ffffff","#cfdcf0"],900,256,30),roughness:.85});
 const iceM=new THREE.MeshStandardMaterial({color:C(0xbfe6ff),transparent:true,opacity:.75,roughness:.1,metalness:.1});
-const AM={trunk:mat(0x5a3a26),pine:mat(0x2f8f5a,{roughness:.8}),pine2:mat(0x3aa86a,{roughness:.8}),snow:mat(0xffffff,{roughness:.7}),
+const AM={trunk:mat(0x5a3a26),pine:mat(0x2f8f5a,{roughness:.8}),pine2:mat(0x3aa86a,{roughness:.8}),snow:mat(0xdde5f2,{roughness:.7}),
   coal:mat(0x222222),carrot:mat(0xff8a2a),scarf:mat(0xe0362c),hat:mat(0x26324a)};
 { const g=new THREE.CircleGeometry(220,64);g.rotateX(-Math.PI/2);const gr=new THREE.Mesh(g,snowM);gr.receiveShadow=true;GA.add(gr);
   // anneau de glace
@@ -1397,6 +1397,7 @@ function step(dt,t){
   skyU.k.value+=(skyTarget-skyU.k.value)*Math.min(1,dt*2);const k=skyU.k.value;
   starMat.opacity=k*.55;sunL.color.copy(SUN_K).lerp(SUN_M,k);hemi.color.copy(HEMI_K).lerp(HEMI_M,k);hemi.groundColor.copy(GRD_K).lerp(GRD_M,k);scene.fog.color.copy(FOG_K).lerp(FOG_M,k);
   skyU.ar.value+=(arenaSky-skyU.ar.value)*Math.min(1,dt*2);const ar=skyU.ar.value;
+  sunL.intensity=1.7-ar*.75;hemi.intensity=.6-ar*.15;
   if(ar>.001){sunL.color.lerp(SUN_A,ar);hemi.color.lerp(HEMI_A,ar);hemi.groundColor.lerp(GRD_A,ar);scene.fog.color.lerp(FOG_A,ar);starMat.opacity=Math.max(starMat.opacity,ar*.6)}
   // décor animé
   const pa=petG.attributes.position;for(let i=0;i<PN;i++){let y=pa.getY(i)-dt*.9,x=pa.getX(i)+Math.sin(t+i)*dt*.6;if(y<0){y=16;x=(Math.random()-.5)*70}pa.setY(i,y);pa.setX(i,x)}pa.needsUpdate=true;
