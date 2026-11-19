@@ -113,6 +113,7 @@
   #frost{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(225,242,255,.9) 100%)}
   #throwBtn{position:absolute;right:26px;bottom:132px;width:92px;height:92px;border-radius:50%;border:0;background:rgba(127,224,255,.92);font-size:38px;pointer-events:auto;touch-action:none}
   #muteChip{pointer-events:auto;cursor:pointer}
+  #hud.inArena .chip.g,#hud.inArena #help{display:none}
   .flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:8;transition:opacity .5s}
   .flash.on{opacity:1}
   .banner{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;pointer-events:none;z-index:7;font-family:'Teko';font-weight:700;font-style:italic;text-transform:uppercase;
@@ -138,9 +139,9 @@
 <div id="hud" class="hidden">
   <div class="obj"><div class="eyebrow" id="hudMap">Kanezaka</div><div id="hudObj">Capture les points</div><div class="pips" id="hudPips"></div></div>
   <div class="hud-r">
-    <div class="chip"><span>⏱ <b id="hudTime">0:00</b></span></div>
-    <div class="chip"><span id="hudColLbl">📜 Ofuda</span> <span><b id="hudCol">0/8</b></span></div>
-    <div class="chip"><span>✔ <b id="hudScore">0</b></span></div>
+    <div class="chip g"><span>⏱ <b id="hudTime">0:00</b></span></div>
+    <div class="chip g"><span id="hudColLbl">📜 Ofuda</span> <span><b id="hudCol">0/8</b></span></div>
+    <div class="chip g"><span>✔ <b id="hudScore">0</b></span></div>
     <div class="chip off" id="mpChip"><span>👥 <b id="mpStatus">Solo</b></span></div>
     <div class="chip" id="muteChip"><span>🔊 Son</span></div>
   </div>
@@ -1050,7 +1051,7 @@ function enterArena(){
   S.mode="arena";S.paused=false;S.map="a";GK.visible=false;GM.visible=false;GA.visible=true;gift.g.visible=false;pad.visible=false;
   skyTarget=0;arenaSky=1;arenaSpawn();camera.position.set(P.x*1.3,6,P.z*1.3);
   PG.visible=shadow.visible=true;arrow.visible=false;R.oneShot=false;playAnim("Idle",.2);
-  $("hud").classList.remove("hidden");$("arenaHud").classList.remove("hidden");
+  $("hud").classList.remove("hidden");$("hud").classList.add("inArena");$("arenaHud").classList.remove("hidden");
   ["capRing"].forEach(id=>$(id).classList.add("hidden"));
   $("hudMap").textContent="Arène · Bataille de boules de neige";$("hudObj").textContent="Touche les autres joueurs !";$("hudPips").innerHTML="";
   $("throwBtn").classList.toggle("hidden",!isTouch);$("jumpBtn").classList.toggle("hidden",!isTouch);$("dashBtn").classList.toggle("hidden",!isTouch);
@@ -1066,7 +1067,7 @@ function exitArena(){
   AR.on=false;S.mode="end";S.paused=true;GA.visible=false;arenaSky=0;bots.forEach(b=>GA.remove(b.g));bots.length=0;
   balls.forEach(b=>scene.remove(b.m));balls.length=0;
   S.map="m";GM.visible=true;skyTarget=1;P.x=0;P.z=20;P.y=0;
-  $("arenaHud").classList.add("hidden");$("hud").classList.add("hidden");$("throwBtn").classList.add("hidden");
+  $("arenaHud").classList.add("hidden");$("hud").classList.add("hidden");$("hud").classList.remove("inArena");$("throwBtn").classList.add("hidden");
   mpRaw({t:"arena",on:false});
   showPanel("diploma");
 }
