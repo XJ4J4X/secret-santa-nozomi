@@ -84,7 +84,26 @@ function parse(c) {
 /* ---------- Salons ---------- */
 const clean = (s, n) => String(s || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, n);
 const num = v => (typeof v === "number" && isFinite(v) ? Math.round(v * 100) / 100 : 0);
-const ANIMS = new Set(["Idle", "Walking", "Running", "Jump", "ThumbsUp", "No", "Wave", "Dance", "Yes"]);
+const ANIMS = new Set(["Idle", "Walking", "Running", "Jump", "ThumbsUp", "No", "Wave", "Dance", "Yes", "Punch"]);
+const ROUND_MS = +process.env.ROUND_MS || 90000, BREAK_MS = +process.env.BREAK_MS || 12000;
+const meta = new Map(); // room -> { round: {end, scores}, timer }
+const isVIP = n => String(n || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === "nozomi";
+function roomMeta(room) { if (!meta.has(room)) meta.set(room, { round: null, timer: null }); return meta.get(room); }
+function roomAll(room) { const r = rooms.get(room); return r ? [...r.values()] : []; }
+function arenaPlayers(room) { return roomAll(room).filter(c => c.inArena); }
+function names(room) { const o = {}; for (const c of roomAll(room)) o[c.id] = c.name; return o; }
+function startRound(room) {
+  const m = roomMeta(room); clearTimeout(m.timer);
+  m.round = { end: Date.now() + ROUND_MS, scores: {} };
+  for (const c of roomAll(room)) send(c, { t: "round", ms: ROUND_MS, scores: {}, names: names(room) });
+  m.timer = setTimeout(() => endRound(room), ROUND_MS);
+}
+function endRound(room) {
+  const m = roomMeta(room); if (!m.round) return;
+  const scores = m.round.scores; m.round = null;
+  for (const c of roomAll(room)) send(c, { t: "roundEnd", scores, names: names(room), next: BREAK_MS });
+  m.timer = setTimeout(() => { m.timer = null; if (rooms.has(room) && arenaPlayers(room).length) startRound(room); }, BREAK_MS);
+}
 
 function others(c) { const r = rooms.get(c.room); return r ? [...r.values()].filter(o => o !== c) : []; }
 function broadcast(c, obj) { for (const o of others(c)) send(o, obj); }
@@ -115,9 +134,29 @@ function onMessage(c, raw) {
   if (!c.room) return;
   if (m.t === "s") {
     c.state = { x: num(m.x), y: num(m.y), z: num(m.z), r: num(m.r), a: ANIMS.has(m.a) ? m.a : "Idle",
-      m: m.m === "m" ? "m" : "k", mo: ["play", "end", "menu"].includes(m.mo) ? m.mo : "menu",
+      m: ["k", "m", "a"].includes(m.m) ? m.m : "k", mo: ["play", "end", "menu", "arena"].includes(m.mo) ? m.mo : "menu",
       sc: Math.max(0, Math.min(12, m.sc | 0)), cp: Math.max(0, Math.min(12, m.cp | 0)) };
     broadcast(c, Object.assign({ t: "s", id: c.id }, c.state));
+    c.inArena = c.state.mo === "arena";
+  } else if (m.t === "arena") {
+    c.inArena = !!m.on;
+    const mt = roomMeta(c.room);
+    if (c.inArena) {
+      if (!mt.round && !mt.timer) startRound(c.room);
+      else if (mt.round) send(c, { t: "round", ms: Math.max(0, mt.round.end - Date.now()), scores: mt.round.scores, names: names(c.room) });
+    }
+  } else if (m.t === "throw") {
+    const now2 = Date.now(); if (now2 - (c.lastThrow || 0) < 250) return; c.lastThrow = now2;
+    broadcast(c, { t: "throw", id: c.id, x: num(m.x), y: num(m.y), z: num(m.z), vx: num(m.vx), vy: num(m.vy), vz: num(m.vz), g: isVIP(c.name) });
+  } else if (m.t === "hit") {
+    const mt = roomMeta(c.room); if (!mt.round) return;
+    const now3 = Date.now(); if (now3 - (c.lastHit || 0) < 200) return; c.lastHit = now3;
+    const target = String(m.target || "");
+    if (target !== "bot") { const r = rooms.get(c.room); const tc = r && r.get(target); if (!tc || !tc.inArena || tc === c) return; }
+    const pts = isVIP(c.name) ? 2 : 1;
+    mt.round.scores[c.id] = (mt.round.scores[c.id] || 0) + pts;
+    const out = { t: "hit", from: c.id, target, pts, scores: mt.round.scores };
+    for (const o of roomAll(c.room)) send(o, out);
   } else if (m.t === "emote") {
     if (ANIMS.has(m.e)) broadcast(c, { t: "emote", id: c.id, e: m.e });
   } else if (m.t === "ev") {
@@ -133,7 +172,8 @@ function drop(c) {
     const r = rooms.get(c.room);
     r.delete(c.id);
     for (const o of r.values()) send(o, { t: "bye", id: c.id });
-    if (r.size === 0) rooms.delete(c.room);
+    if (r.size === 0) { rooms.delete(c.room); const mt = meta.get(c.room); if (mt) { clearTimeout(mt.timer); meta.delete(c.room); } }
+    else if (!arenaPlayers(c.room).length) { const mt = meta.get(c.room); if (mt && !mt.round) { clearTimeout(mt.timer); mt.timer = null; } }
   }
 }
 
