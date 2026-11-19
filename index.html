@@ -230,7 +230,7 @@ const SPECIAL_NAME = "nozomi";
 // Petits mots des amis, affichés à Nozomi quand elle ouvre son cadeau final.
 // Exemple : { de: "Bob", mot: "Joyeux Noël Nozomi, merci pour les heals !" }
 const FRIEND_MESSAGES = [];
-const SPECIAL_MESSAGE = "Merci pour toutes les games, les fous rires sur Discord et les heals au bon moment. Joyeux Noël ! — Ton Secret Santa";
+const SPECIAL_MESSAGE = "Joyeux Secret Santa je ne suis pas tres fort pour les discours mais j'espere que ce petit jeux ta plus";
 
 /* ---------------- Questions ---------------- */
 const QUESTIONS = [
@@ -1110,9 +1110,9 @@ $("ctrlDesk").classList.toggle("hidden",isTouch);$("ctrlTouch").classList.toggle
 $("profileBtn").onclick=()=>{
   player.name=$("nameIn").value.trim();player.special=norm(player.name)===SPECIAL_NAME;
   if(player.special){
-    $("introEyebrow").textContent="🎁 Mission spéciale · Secret Santa";
+    $("introEyebrow").textContent="Mission du jour : GAGNER";
     $("introTitle").textContent="Joyeux Noël, "+player.name+" !";
-    $("introText").innerHTML="Ton Secret Santa t'a préparé une mission rien que pour toi : sécurise le <b>sanctuaire de Kanezaka</b>, puis décolle vers <b>Mars</b> sur les traces de tes deux héroïnes préférées. Une récompense <b>légendaire</b> t'attend au bout… 🦊🪐";
+    $("introText").innerHTML="Ton Secret Santa t'a préparé une mission rien que pour toi : sécurise le <b>sanctuaire de Kanezaka</b>, puis décolle vers <b>Mars</b> sur les traces de tes deux héroïnes préférées. Une récompense <b>légendaire</b> t'attend au bout…";
   } else {
     $("introEyebrow").textContent="Briefing de mission";
     $("introTitle").textContent=G("Bienvenue, agente ","Bienvenue, agent ")+player.name;
