@@ -283,7 +283,7 @@ try{ if(window.claude&&claude.use){ claude.use("downloads").then(d=>{DL=d;dlChec
 const renderer=new THREE.WebGLRenderer({canvas:$("scene"),antialias:true,powerPreference:"high-performance"});
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
 renderer.outputEncoding=THREE.sRGBEncoding;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.92;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(62,1,.1,1500);
@@ -309,8 +309,8 @@ function noiseTex(base,spots,n,size=256,rep=8){const c=document.createElement("c
   for(let i=0;i<n;i++){x.fillStyle=spots[i%spots.length];x.globalAlpha=.05+Math.random()*.12;x.beginPath();x.arc(Math.random()*size,Math.random()*size,2+Math.random()*14,0,7);x.fill()}
   x.globalAlpha=1;const t=tex(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep,rep);return t}
 function tileTex(){const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");
-  x.fillStyle="#d9ccb6";x.fillRect(0,0,256,256);
-  for(let r=0;r<4;r++)for(let k=0;k<4;k++){const off=r%2?32:0;x.fillStyle=["#e8dcc6","#e2d4bc","#ecdfca","#dccdb4"][(r+k)%4];x.fillRect(k*64+off+3,r*64+3,58,58);
+  x.fillStyle="#9c8f7c";x.fillRect(0,0,256,256);
+  for(let r=0;r<4;r++)for(let k=0;k<4;k++){const off=r%2?32:0;x.fillStyle=["#c9b89c","#bfae92","#cdbda2","#b8a68a"][(r+k)%4];x.fillRect(k*64+off+3,r*64+3,58,58);
     if(off&&k===3){x.fillRect(3,r*64+3,26,58)}}
   for(let i=0;i<300;i++){x.fillStyle="rgba(120,100,80,.06)";x.fillRect(Math.random()*256,Math.random()*256,3,3)}
   const t=tex(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(14,14);return t}
@@ -334,8 +334,8 @@ const starMat=new THREE.PointsMaterial({color:0xffffff,size:1.4,transparent:true
  g.setAttribute("position",new THREE.BufferAttribute(p,3));scene.add(new THREE.Points(g,starMat));}
 
 /* lumières */
-const hemi=new THREE.HemisphereLight(C(0xcfe6ff),C(0x8a7058),.75);scene.add(hemi);
-const sunL=new THREE.DirectionalLight(C(0xfff0d8),2.3);sunL.position.set(-36,60,-50);
+const hemi=new THREE.HemisphereLight(C(0xcfe6ff),C(0x8a7058),.6);scene.add(hemi);
+const sunL=new THREE.DirectionalLight(C(0xfff0d8),1.7);sunL.position.set(-36,60,-50);
 sunL.castShadow=true;sunL.shadow.mapSize.set(2048,2048);
 Object.assign(sunL.shadow.camera,{left:-46,right:46,top:46,bottom:-46,near:1,far:200});
 sunL.shadow.bias=-.0004;sunL.shadow.normalBias=.03;scene.add(sunL);scene.add(sunL.target);
@@ -368,7 +368,7 @@ function roof(w,d,h,over,m,gold){
 /* matériaux de Kanezaka */
 const M={
   red:mat(0xe0362c,{roughness:.5}),redDark:mat(0xa8231f,{roughness:.55}),ink:mat(0x2b2326,{roughness:.6}),
-  plaster:mat(0xf6f0e4,{roughness:.9}),wood:mat(0x8a4a2a,{roughness:.7}),woodDark:mat(0x5a2e1c,{roughness:.7}),
+  plaster:mat(0xece3d2,{roughness:.9}),wood:mat(0x8a4a2a,{roughness:.7}),woodDark:mat(0x5a2e1c,{roughness:.7}),
   roof:mat(0x2f5578,{roughness:.55,metalness:.15}),roof2:mat(0x3e3a52,{roughness:.6}),gold:mat(0xf2c14e,{roughness:.3,metalness:.7}),
   stone:mat(0xbfb6a8,{roughness:.95}),stoneDark:mat(0x8f877c,{roughness:.95}),
   win:glowMat(0xffc47a),lantern:new THREE.MeshStandardMaterial({color:C(0xff5a36),emissive:C(0xff4a20),emissiveIntensity:1.4,roughness:.6}),
@@ -380,7 +380,7 @@ const M={
   const yg=new THREE.CircleGeometry(36,64);yg.rotateX(-Math.PI/2);
   const yard=new THREE.Mesh(yg,new THREE.MeshStandardMaterial({map:tileTex(),roughness:.95}));yard.position.y=.02;yard.receiveShadow=true;GK.add(yard);
   // allée centrale
-  const pathM=mat(0xf1e6d2,{roughness:.9});
+  const pathM=mat(0xd6c3a2,{roughness:.9});
   for(let i=0;i<24;i++){const s=box(3,.14,1.15,pathM);s.position.set(0,.09,22-i*1.3);s.receiveShadow=true;GK.add(s)}
   // montagnes lointaines enneigées
   for(let i=0;i<12;i++){const a=i/12*Math.PI*2+Math.random()*.2,h=45+Math.random()*45,r=30+Math.random()*25,d=170+Math.random()*40;
